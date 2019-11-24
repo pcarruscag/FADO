@@ -1,4 +1,7 @@
 import sys
+import time
+
+#time.sleep(3)
 
 config = sys.argv[1]
 

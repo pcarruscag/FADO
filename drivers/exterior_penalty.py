@@ -58,6 +58,12 @@ class ExteriorPenaltyDriver(DriverBase):
         self._jacTime = 0
         self._isInit = False
         self._dirPrefix = "DSN_"
+
+        # variables for parallelization of evaluations
+        self._parallelEval = False
+        self._funEvalGraph = None
+        self._jacEvalGraph = None
+        self._waitTime = 10.0
     #end
 
     # method for lazy initialization
@@ -95,6 +101,8 @@ class ExteriorPenaltyDriver(DriverBase):
 
         # update the values of the variables
         self._setCurrent(x)
+
+        if self._parallelEval: self._evalFunInParallel()
 
         # evaluate everything (sequential for now)
         self._funEval += 1
@@ -154,6 +162,8 @@ class ExteriorPenaltyDriver(DriverBase):
         os.chdir(os.path.join(self._userDir,self._workDir))
         
         # initializing and updating values was done when evaluating the function
+
+        if self._parallelEval: self._evalJacInParallel()
 
         # evaluate all required gradients (skip those where the constraint is not active)
         self._jacEval += 1
@@ -226,6 +236,138 @@ class ExteriorPenaltyDriver(DriverBase):
             par.increment()
     #end
 
-#end
+    # build evaluation graphs for parallel execution
+    def setEvaluationMode(self,parallel=True,waitTime=10.0):
+        self._parallelEval = parallel
+        if not parallel: return # no need to build graphs
+        self._waitTime = waitTime
 
+        # get all unique evaluation steps
+        valEvals = set()
+        jacEvals = set()
+
+        def _addEvals(flist,vlist,jlist):
+            for obj in flist:
+                vlist.update(obj.function.getValueEvalChain())
+                jlist.update(obj.function.getGradientEvalChain())
+            #end
+        #end
+        _addEvals(self._objectives   ,valEvals,jacEvals)
+        _addEvals(self._constraintsEQ,valEvals,jacEvals)
+        _addEvals(self._constraintsLT,valEvals,jacEvals)
+        _addEvals(self._constraintsGT,valEvals,jacEvals)
+        _addEvals(self._constraintsIN,valEvals,jacEvals)
+
+        # for each unique evaluation list its direct dependencies
+        self._funEvalGraph = dict(zip(valEvals,[set() for i in range(len(valEvals))]))
+        self._jacEvalGraph = dict(zip(jacEvals,[set() for i in range(len(jacEvals))]))
+
+        def _addDependencies(flist,funGraph,jacGraph):
+            for obj in flist:
+                evals = obj.function.getValueEvalChain()
+                for i in range(1,len(evals)):
+                    funGraph[evals[i]].add(evals[i-1])
+                    
+                evals = obj.function.getGradientEvalChain()
+                for i in range(1,len(evals)):
+                    jacGraph[evals[i]].add(evals[i-1])
+            #end
+        #end
+        _addDependencies(self._objectives   ,self._funEvalGraph,self._jacEvalGraph)
+        _addDependencies(self._constraintsEQ,self._funEvalGraph,self._jacEvalGraph)
+        _addDependencies(self._constraintsLT,self._funEvalGraph,self._jacEvalGraph)
+        _addDependencies(self._constraintsGT,self._funEvalGraph,self._jacEvalGraph)
+        _addDependencies(self._constraintsIN,self._funEvalGraph,self._jacEvalGraph)
+    #end
+
+    # run evaluations extracting maximum parallelism
+    def _evalFunInParallel(self):
+        self._funTime -= time.time()
+        while True:
+            allRun = True
+            for evl,depList in self._funEvalGraph.items():
+                # either running or finished, move on
+                if evl.isIni() or evl.isRun():
+                    evl.poll() # (starts or updates internal state)
+                    allRun &= evl.isRun()
+                    continue
+                #end
+                allRun &= evl.isRun()
+
+                # if dependencies are met, start evaluation
+                for dep in depList:
+                    if not dep.isRun(): break
+                else:
+                    evl.initialize()
+                    evl.poll()
+                #end
+            #end
+            if allRun: break
+            time.sleep(self._waitTime)
+        #end
+        self._funTime += time.time()
+    #end
+
+    # same for gradients but having in mind which functions are active
+    def _evalJacInParallel(self):
+        self._jacTime -= time.time()
+
+        # determine what evaluations are active based on functions
+        active = dict(zip(self._jacEvalGraph.keys(),\
+                          [False for i in range(len(self._jacEvalGraph))]))
+
+        for obj in self._objectives:
+            for evl in obj.function.getGradientEvalChain():
+                active[evl] = True
+
+        for obj in self._constraintsEQ:
+            for evl in obj.function.getGradientEvalChain():
+                active[evl] = True
+
+        for (obj,f) in zip(self._constraintsLT,self._ltval):
+            if f > 0.0:
+                for evl in obj.function.getGradientEvalChain():
+                    active[evl] = True
+
+        for (obj,f) in zip(self._constraintsGT,self._ltval):
+            if f < 0.0:
+                for evl in obj.function.getGradientEvalChain():
+                    active[evl] = True
+
+        for (obj,f) in zip(self._constraintsIN,self._inval):
+            if f > 1.0 or f < 0.0:
+                for evl in obj.function.getGradientEvalChain():
+                    active[evl] = True
+
+        while True:
+            allRun = True
+            for evl,depList in self._jacEvalGraph.items():
+                if not active[evl]: continue
+
+                # ensure all dependencies are active
+                for dep in depList:
+                    active[dep] = True
+                
+                # either running or finished, move on
+                if evl.isIni() or evl.isRun():
+                    evl.poll() # (starts or updates internal state)
+                    allRun &= evl.isRun()
+                    continue
+                #end
+                allRun &= evl.isRun()
+
+                # if dependencies are met, start evaluation
+                for dep in depList:
+                    if not dep.isRun(): break
+                else:
+                    evl.initialize()
+                    evl.poll()
+                #end
+            #end
+            if allRun: break
+            time.sleep(self._waitTime)
+        #end
+        self._jacTime += time.time()
+    #end
+#end
 

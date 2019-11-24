@@ -28,6 +28,7 @@ class ExternalRun:
         self._workDir = dir
         self._command = command
         self._process = None
+        self._variables = set()
         self._parameters = []
         self.finalize()
 
@@ -61,13 +62,16 @@ class ExternalRun:
     def getParameters(self):
         return self._parameters
 
+    def updateVariables(self,variables):
+        self._variables.update(variables)
+
     def setWorkDir(self,dir):
         self._workDir = dir
 
     def setCommand(self,command):
         self._command = command
 
-    def initialize(self,variables):
+    def initialize(self):
         if self._isIni: return
         
         os.mkdir(self._workDir)
@@ -79,7 +83,7 @@ class ExternalRun:
             shutil.copy(file,target)
             for par in self._parameters:
                 par.writeToFile(target)
-            for var in variables:
+            for var in self._variables:
                 var.writeToFile(target)
 
         self._process = sp.Popen(self._command,cwd=self._workDir,
@@ -105,6 +109,9 @@ class ExternalRun:
             self._retcode = retcode
             self._isRun = True
         return self._retcode
+
+    def isIni(self):
+        return self._isIni
 
     def isRun(self):
         return self._isRun

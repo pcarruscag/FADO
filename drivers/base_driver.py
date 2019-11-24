@@ -126,6 +126,12 @@ class DriverBase:
                 if var not in self._variables: self._variables.append(var)
             for par in obj.function.getParameters():
                 if par not in self._parameters: self._parameters.append(par)
+
+            # inform evaluations about which variables they depend on
+            for evl in obj.function.getValueEvalChain():
+                evl.updateVariables(obj.function.getVariables())
+            for evl in obj.function.getGradientEvalChain():
+                evl.updateVariables(obj.function.getVariables())
         #end
     #end
 

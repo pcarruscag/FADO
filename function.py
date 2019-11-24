@@ -99,7 +99,7 @@ class Function:
 
     def _sequentialEval(self,evals):
         for evl in evals:
-            evl.initialize(self._variables)
+            evl.initialize()
             evl.run()
         #end
     #end
@@ -115,4 +115,10 @@ class Function:
             evl.finalize()
         #end
     #end
+
+    def getValueEvalChain(self):
+        return self._funEval
+
+    def getGradientEvalChain(self):
+        return self._gradEval
 #end

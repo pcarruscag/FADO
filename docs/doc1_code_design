@@ -117,9 +117,34 @@ not to the individual parallelization of those tasks.
 An evaluation schedule needs to be created at the level of the evaluation
 methods (not the function as those may share evaluations).
 The optimization methods separate functions and gradient evaluation so that
-dependency need not be established?
+dependency need not be established (for now)
 It is the derived driver that needs to create the schedule as some optimization
 methods do not call for evaluation of all functions in one iteration.
+Creating the evaluation graph:
+  - The eval steps within each function are assumed to be sequential;
+  - For each unique evaluation a list of its direct dependencies is built;
+  - The parallel evaluation is an infinite loop over evaluations, once
+    dependencies are met the eval is initialized and started (no wait) the loop
+    stops when all evals are finished;
+For this to work there cannot be hidden dependencies, the user needs to make
+all direct dependencies known, e.g. if two functions differ only in post
+processing the main step still needs to be added to both.
+The graph is built in "setEvaluationMode".
+Slight problem(s):
+P To initialize an evaluation the variables are needed, but these belong to the
+  function. The driver could determine what variables are associated with an
+  evaluation, but this is not very elegant.
+S Alternatively the evaluation can build its own list of variables as it is
+  added to functions. Functions that share evaluations should share variables
+  (the future will prove me wrong but at the moment that is my intuition).
+  These lists of variables should be done by the driver's "preprocessVariables"
+  otherwise we would be imposing that variables need to be added to functions
+  before the evaluation steps.
+P We only want to compute the gradient of active constraints.
+S First we assume no evaluation is needed, then for all objectives and active
+  constraints we mark the associated evaluations as needed. Moreover, some
+  (unlikely) multilevel dependencies may also activate evaluations.
+  
 
 # Ownership of variables and parameters
 Input variables are owned by functions because:
@@ -164,6 +189,9 @@ First let's make the sequential version work:
   - At the beginning of a new iteration the work dir may be saved;
   - The driver will evaluate the functions one by one, the functions direct the
     call to the evaluation method which will be lazy;
+Parallel version:
+  - Values are still retrieved sequentially but evaluations are run before in
+    parallel, see process in # Parallel execution
 
 Managing working directories:
   - Evaluations and functions work relative to current directory, but for
