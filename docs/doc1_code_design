@@ -76,8 +76,10 @@ EVALUATION has:
 Evaluation methods can be shared by functions and are lazy, i.e. run as needed.
 
 What happens when running an evaluation?
-  - The directory is created, the input files are moved into it (symbolic links
-    are more efficient but maybe not compatible with windows?)
+  - The directory is created, the input files are moved into it, an option for
+    symbolic links (only of data files) will be given but the default will be
+    hard copy for compatibility with windows. The option will be in the
+    constructor of evaluation.
   - The Popen object is created
   - The evaluation parameters and function variables are written as the files
     are copied.

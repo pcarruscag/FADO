@@ -22,11 +22,12 @@ import subprocess as sp
 
 # Class to define an execution of an external code
 class ExternalRun:
-    def __init__(self,dir="",command=""):
+    def __init__(self,dir,command,useSymLinks=False):
         self._dataFiles = []
         self._confFiles = []
         self._workDir = dir
         self._command = command
+        self._symLinks = useSymLinks
         self._process = None
         self._variables = set()
         self._parameters = []
@@ -67,18 +68,13 @@ class ExternalRun:
     def updateVariables(self,variables):
         self._variables.update(variables)
 
-    def setWorkDir(self,dir):
-        self._workDir = dir
-
-    def setCommand(self,command):
-        self._command = command
-
     def initialize(self):
         if self._isIni: return
         
         os.mkdir(self._workDir)
         for file in self._dataFiles:
-            shutil.copy(file,self._workDir)
+            target = os.path.join(self._workDir,os.path.basename(file))
+            (shutil.copy,os.symlink)[self._symLinks](os.path.abspath(file),target)
 
         for file in self._confFiles:
             target = os.path.join(self._workDir,os.path.basename(file))
