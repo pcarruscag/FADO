@@ -19,7 +19,7 @@ a = float(lines[0])
 b = float(lines[1])
 
 # Rosenbrock's function
-f1 = (a-x)**2+b(y-x**2)**2
+f1 = (a-x)**2+b*(y-x**2)**2
 
 # A simple linear constraint
 f2 = x+y

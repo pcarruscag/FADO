@@ -111,7 +111,7 @@ class Parameter:
 
     def writeToFile(self,file):
         value = self._values[self._index]
-        if function != None:
+        if self._function != None:
             value = self._function(value)
         self._parser.write(file,value)
 #end

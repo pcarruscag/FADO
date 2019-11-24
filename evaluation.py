@@ -29,6 +29,7 @@ class ExternalRun:
         self._command = command
         self._process = None
         self._parameters = []
+        self.finalize()
 
     def addData(self,file):
         self._dataFiles.append(file)
@@ -45,25 +46,49 @@ class ExternalRun:
     def setCommand(self,command):
         self._command = command
 
-    def initialize(self):
+    def initialize(self,variables):
+        if self._isIni: return
+        
         os.mkdir(self._workDir)
         for file in self._dataFiles:
             shutil.copy(file,self._workDir)
 
         for file in self._confFiles:
             shutil.copy(file,self._workDir)
-            for param in self._parameters:
-                param.write(os.path.join(self._workDir,file))
+            for par in self._parameters:
+                par.writeToFile(os.path.join(self._workDir,file))
+            for var in variables:
+                var.writeToFile(os.path.join(self._workDir,file))
 
         self._process = sp.Popen(self._command,cwd=self._workDir,
                         shell=True,stdout=sp.PIPE,stderr=sp.PIPE)
+
+        self._isIni = True
     #end
 
     def run(self,timeout=None):
-        return self._process.wait(timeout)
+        if not self._isIni:
+            raise RuntimeError("Run was not initialized.")
+        if self._isRun: return self._retcode
+        self._retcode = self._process.wait(timeout)
+        self._isRun = True
+        return self._retcode
 
     def poll(self):
-        return self._process.poll()
+        if not self._isIni:
+            raise RuntimeError("Run was not initialized.")
+        if self._isRun: return self._retcode
+        retcode = self._process.poll()
+        if retcode is not None:
+            self._retcode = retcode
+            self._isRun = True
+        return self._retcode
 
+    def isRun(self):
+        return self._isRun
+
+    # reset "lazy" flags
     def finalize(self):
-        pass
+        self._isIni = False
+        self._isRun = False
+        self._retcode = -100

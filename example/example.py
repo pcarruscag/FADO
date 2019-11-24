@@ -91,3 +91,4 @@ driver.addObjective("min",fun2,0.5)
 driver.addUpperBound(fun3,2.0)
 
 # now by calling driver.fun or driver.grad the driver should do all the work
+fun1.getValue()

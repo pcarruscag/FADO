@@ -50,9 +50,16 @@ class Function:
         self._gradEval.append(evaluation)
 
     def getValue(self):
+        # check if we can retrive the value
+        if not self._funEval[-1].isRun():
+            self._sequentialEval(self._funEval)
         return self._outParser.read(self._outFile)
 
     def getGradient(self):
+        # check if we can retrive the gradient
+        if not self._gradEval[-1].isRun():
+            self._sequentialEval(self._gradEval)
+        
         size = 0
         for var in self._variables:
             size += var.getSize()
@@ -73,4 +80,12 @@ class Function:
         
         return gradient
     #end
+
+    def _sequentialEval(self,evals):
+        for evl in evals:
+            evl.initialize(self._variables)
+            evl.run()
+        #end
+    #end
+
 #end

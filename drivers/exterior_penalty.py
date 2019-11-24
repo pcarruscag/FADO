@@ -75,9 +75,30 @@ class ExteriorPenaltyDriver(DriverBase):
     def fun(self,x):
         self._initialize()
 
-        # evaluate everything
+        # update the values of the variables
+        self._setCurrent(x)
+
+        # update value of parameters here
+        
+
+        # evaluate everything (sequential for now)
         self._funEval += 1
         self._funTime -= time.time()
+
+        for i in range(self._ofval.size):
+            self._ofval[i] = self._objectives[i].function.getValue()
+
+        for i in range(self._eqval.size):
+            self._eqval[i] = self._constraintsEQ[i].function.getValue()
+
+        for i in range(self._ltval.size):
+            self._ltval[i] = self._constraintsLT[i].function.getValue()
+
+        for i in range(self._gtval.size):
+            self._gtval[i] = self._constraintsGT[i].function.getValue()
+
+        for i in range(self._inval.size):
+            self._inval[i] = self._constraintsIN[i].function.getValue()
         
         self._funTime += time.time()
 
@@ -112,9 +133,14 @@ class ExteriorPenaltyDriver(DriverBase):
     #end
 
     def grad(self,x):
+        # initializing and updating values was done when evaluating the function
+        
         # evaluate all required gradients (skip those where constraint is not active)
         self._jacEval += 1
         self._jacTime -= time.time()
+
+        # each function will return a gradient only for its variables
+        # it is not safe to assume that the size will be the same
         
         self._jacTime += time.time()
 

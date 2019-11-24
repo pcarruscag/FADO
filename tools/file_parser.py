@@ -28,6 +28,8 @@ class LabelReplacer:
         lines = fid.readlines()
         fid.close()
 
+        if isinstance(value,np.ndarray): value = value[0]
+
         newlines = []
         for line in lines:
             newlines.append(line.replace(self._label,str(value)))

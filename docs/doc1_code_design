@@ -106,7 +106,6 @@ At this stage the config files can be updated by the function before the run.
 (note: at some point it may make sense to reuse directories, update only config
        and make use of generated data without moving)
 
-
 # File parsing methods
 - Scalar input variables and parameters are parsed with the template and label
   strategy, i.e. the user provides a file with labels that will be replaced by
@@ -150,9 +149,17 @@ be set in the evaluation method so it can be managed by it.
 What happens when the optimizer requests the driver to evaluate the objective
 function.
 
-driver.fun is called with a numpy array as input
-  1 - The values in the numpy array are transferred to the Variable objects,
-      the values can now be written to file via the method in variable.
+Quick recap:
+  - The driver holds functions;
+  - The functions have evaluations (val & grad) and variables;
+  - The evaluations have parameters and input files;
+
+First let's make the sequential version work:
+  - Each iteration takes place inside the working directory of the driver;
+  - There each evaluation creates its own directory;
+  - At the beginning of a new iteration the work dir may be saved;
+  - The driver will evaluate the functions one by one, the functions direct the
+    call to the evaluation method which will be lazy;
 
 
 
