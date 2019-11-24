@@ -104,4 +104,15 @@ class Function:
         #end
     #end
 
+    def resetValueEvalChain(self):
+        self._resetEvals(self._funEval)
+
+    def resetGradientEvalChain(self):
+        self._resetEvals(self._gradEval)
+
+    def _resetEvals(self,evals):
+        for evl in evals:
+            evl.finalize()
+        #end
+    #end
 #end

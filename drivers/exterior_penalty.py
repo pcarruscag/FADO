@@ -144,6 +144,7 @@ class ExteriorPenaltyDriver(DriverBase):
         for (g,r) in zip(self._gtval,self._gtpen): f += r*min(0.0,g)*g
         for (g,r) in zip(self._inval,self._inpen): f += r*(min(0.0,g)+max(1.0,g)-1.0)*g
 
+        self._resetAllValueEvaluations()
         os.chdir(self._userDir)
 
         return f
@@ -161,19 +162,22 @@ class ExteriorPenaltyDriver(DriverBase):
         self._grad *= 0.0
 
         for obj in self._objectives:
-            self._grad += obj.function.getGradient()*obj.scale
+            self._grad += obj.function.getGradient(self._variableStartMask)*obj.scale
 
         for (obj,f,r) in zip(self._constraintsEQ,self._eqval,self._eqpen):
-            self._grad += 2.0*r*f*obj.function.getGradient()*obj.scale
+            self._grad += 2.0*r*f*obj.function.getGradient(self._variableStartMask)*obj.scale
 
         for (obj,f,r) in zip(self._constraintsLT,self._ltval,self._ltpen):
-            if f > 0.0: self._grad += 2.0*r*f*obj.function.getGradient()*obj.scale
+            if f > 0.0:
+                self._grad += 2.0*r*f*obj.function.getGradient(self._variableStartMask)*obj.scale
 
         for (obj,f,r) in zip(self._constraintsGT,self._gtval,self._gtpen):
-            if f < 0.0: self._grad += 2.0*r*f*obj.function.getGradient()*obj.scale
+            if f < 0.0:
+                self._grad += 2.0*r*f*obj.function.getGradient(self._variableStartMask)*obj.scale
 
         for (obj,f,r) in zip(self._constraintsIN,self._inval,self._inpen):
-            if f>1.0 or f<0.0: self._grad += 2.0*r*f*obj.function.getGradient()*obj.scale
+            if f > 1.0 or f < 0.0:
+                self._grad += 2.0*r*f*obj.function.getGradient(self._variableStartMask)*obj.scale
 
         self._grad /= self._varScales
 
@@ -182,6 +186,7 @@ class ExteriorPenaltyDriver(DriverBase):
         # update penalties and params (evaluating the gradient concludes an outer iteration)
         if self._jacEval % self._freq is 0: self._update()
 
+        self._resetAllGradientEvaluations()
         os.chdir(self._userDir)
 
         return self._grad

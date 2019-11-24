@@ -188,3 +188,13 @@ means the driver needs to cd in and out of it.
 For safety, in "preprocessVariables" the top level will be stored as an
 absolute path, the driver work dir is then always set with respect to this.
 
+# Lazy evaluation
+The evaluations are lazy (because they can be shared across functions), after
+they run a flag is set that keeps them from running again, because evaluations
+do not know about each other they cannot reset their own flags.
+The flags can be reset by the driver at the end of all evaluations in "fun" and
+"grad" but this means those driver functions are not lazy, i.e. they cannot be
+used to simply retrieve the values.
+This should be fine... It seems to be the assumption that most optimizers make.
+
+

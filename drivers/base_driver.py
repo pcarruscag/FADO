@@ -151,5 +151,31 @@ class DriverBase:
         # store the absolute current path
         self._userDir = os.path.abspath(os.curdir)
     #end
+
+    def _resetAllValueEvaluations(self):
+        for obj in self._objectives:
+            obj.function.resetValueEvalChain()
+        for obj in self._constraintsEQ:
+            obj.function.resetValueEvalChain()
+        for obj in self._constraintsLT:
+            obj.function.resetValueEvalChain()
+        for obj in self._constraintsGT:
+            obj.function.resetValueEvalChain()
+        for obj in self._constraintsIN:
+            obj.function.resetValueEvalChain()
+    #end
+
+    def _resetAllGradientEvaluations(self):
+        for obj in self._objectives:
+            obj.function.resetGradientEvalChain()
+        for obj in self._constraintsEQ:
+            obj.function.resetGradientEvalChain()
+        for obj in self._constraintsLT:
+            obj.function.resetGradientEvalChain()
+        for obj in self._constraintsGT:
+            obj.function.resetGradientEvalChain()
+        for obj in self._constraintsIN:
+            obj.function.resetGradientEvalChain()
+    #end
 #end
 
