@@ -24,7 +24,7 @@ class InputVariable:
     # parser specifies how the variable is written to file
     # size >= 1 defines a vector variable whose x0, lb, and ub values are broadcast
     # size == 0 means auto, size determined from x0, lb/ub must be compatible or scalar
-    def __init__(self, x0, parser, size=0, lb=-1E20, ub=1E20):
+    def __init__(self, x0, parser, size=0, scale=1.0, lb=-1E20, ub=1E20):
         self._parser = parser
 
         if size == 0 and isinstance(x0,float): size=1
@@ -33,12 +33,14 @@ class InputVariable:
                 assert(isinstance(x0,float))
                 assert(isinstance(lb,float))
                 assert(isinstance(ub,float))
+                assert(isinstance(scale,float))
             except:
-                raise ValueError("If size is specified, x0, lb, and ub must be scalars.")
+                raise ValueError("If size is specified, x0, scale, lb, and ub must be scalars.")
             #end
             self._x0 = np.ones((size,))*x0
             self._lb = np.ones((size,))*lb
             self._ub = np.ones((size,))*ub
+            self._scale = np.ones((size,))*scale
         else:
             try:
                 size = x0.size
@@ -56,8 +58,14 @@ class InputVariable:
                 else:
                     self._ub = np.ones((size,))*ub
                 #end
+                if not isinstance(scale,float):
+                    assert(scale.size == size)
+                    self._scale = scale
+                else:
+                    self._scale = np.ones((size,))*scale
+                #end
             except:
-                raise ValueError("Incompatible sizes of x0, lb, and ub.")
+                raise ValueError("Incompatible sizes of x0, scale, lb, and ub.")
             #end
         #end
 
@@ -79,6 +87,9 @@ class InputVariable:
 
     def getUpperBound(self):
         return self._ub
+
+    def getScale(self):
+        return self._scale
 
     def setCurrent(self,x):
         for i in range(x.size): self._x[i] = x[i]

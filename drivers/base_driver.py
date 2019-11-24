@@ -51,22 +51,16 @@ class DriverBase:
 
     def __init__(self):
         self._variables = []
-        self._varScales = []
+        self._varScales = None
         self._parameters = []
         self._objectives = []
         self._constraintsEQ = []
         self._constraintsLT = []
         self._constraintsGT = []
         self._constraintsIN = []
+        self._variableStartMask = None
         self.__workDir = "__WORKDIR__"
     #end
-
-    def addVariable(self,variable,scale=1.0):
-        self._variables.append(variable)
-        self._varScales.append(scale)
-
-    def addParameter(self,parameter):
-        self._parameters.append(parameter)
 
     def addObjective(self,type,function,scale=1.0,weight=1.0):
         self._objectives.append(self._Objective(type,function,scale,weight))
@@ -101,39 +95,53 @@ class DriverBase:
         #end
         return x
     #end
-    
+
     def getInitial(self):
-        return self._getConcatenatedVector("getInitial")
+        return self._getConcatenatedVector("getInitial")*self._varScales
 
     def getLowerBound(self):
-        return self._getConcatenatedVector("getLowerBound")
+        return self._getConcatenatedVector("getLowerBound")*self._varScales
 
     def getUpperBound(self):
-        return self._getConcatenatedVector("getUpperBound")
+        return self._getConcatenatedVector("getUpperBound")*self._varScales
 
-    # update design variables with design vector from the optimizer
-    def setCurrent(self,x):
+    # update design variables with the design vector from the optimizer
+    def _setCurrent(self,x):
         startIdx = 0
-        for (var,scale) in zip(self._variables,self._varScales):
+        for var in self._variables:
             endIdx = startIdx+var.getSize()
-            var.setCurrent(x[startIdx:endIdx]/scale)
+            var.setCurrent(x[startIdx:endIdx]/var.getScale())
             startIdx = endIdx
         #end
     #end
 
+    def _getVarsAndParsFromFun(self,functions):
+        for obj in functions:
+            for var in obj.function.getVariables():
+                if var not in self._variables: self._variables.append(var)
+            for par in obj.function.getParameters():
+                if par not in self._parameters: self._parameters.append(par)
+        #end
+    #end
+
+    # build variable and parameter vectors from function data
+    def preprocessVariables(self):
+        # build ordered non duplicated lists of variables and parameters
+        self._variables = []
+        self._parameters = []
+        self._getVarsAndParsFromFun(self._objectives)
+        self._getVarsAndParsFromFun(self._constraintsEQ)
+        self._getVarsAndParsFromFun(self._constraintsLT)
+        self._getVarsAndParsFromFun(self._constraintsGT)
+        self._getVarsAndParsFromFun(self._constraintsIN)
+
+        # map the start index of each variable in the design vector
+        idx = [0]
+        for var in self._variables[1:]:
+            idx.append(idx[-1]+var.getSize())
+        self._variableStartMask = dict(zip(self._variables,idx))
+
+        self._varScales = self._getConcatenatedVector("getScale")
+    #end
 #end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

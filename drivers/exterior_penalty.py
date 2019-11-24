@@ -78,8 +78,10 @@ class ExteriorPenaltyDriver(DriverBase):
         # update the values of the variables
         self._setCurrent(x)
 
-        # update value of parameters here
-        
+        # update the values of the parameters
+        if self._jacEval % self._freq is 0 and self._jacEval is not 0:
+            for par in self._parameters:
+                par.increment()
 
         # evaluate everything (sequential for now)
         self._funEval += 1
@@ -134,26 +136,37 @@ class ExteriorPenaltyDriver(DriverBase):
 
     def grad(self,x):
         # initializing and updating values was done when evaluating the function
-        
+
         # evaluate all required gradients (skip those where constraint is not active)
         self._jacEval += 1
         self._jacTime -= time.time()
 
-        # each function will return a gradient only for its variables
-        # it is not safe to assume that the size will be the same
-        
+        gradient = np.zeros((self.getNumVariables(),))
+
+        for obj in self._objectives:
+            gradient += obj.function.getGradient()*obj.scale
+
+        for (obj,f,r) in zip(self._constraintsEQ,self._eqval,self._eqpen):
+            gradient += 2.0*r*f*obj.function.getGradient()*obj.scale
+
+        for (obj,f,r) in zip(self._constraintsLT,self._ltval,self._ltpen):
+            if f > 0.0: gradient += 2.0*r*f*obj.function.getGradient()*obj.scale
+
+        for (obj,f,r) in zip(self._constraintsGT,self._gtval,self._gtpen):
+            if f < 0.0: gradient += 2.0*r*f*obj.function.getGradient()*obj.scale
+
+        for (obj,f,r) in zip(self._constraintsIN,self._inval,self._inpen):
+            if f>1.0 or f<0.0: gradient += 2.0*r*f*obj.function.getGradient()*obj.scale
+
         self._jacTime += time.time()
 
-        # scale gradients as required
-
-        # combine results
-        #return df+2*self._r*max(0.0,self._hval)*dh
+        return gradient/self._varScales
     #end
 
     # if the constraint is active and above tolerance increase the penalty
     # otherwise decrease (minimum and maximum are constrained)
     def update(self):
-        # equality
+        # equality (always active)
         for i in range(self._eqpen.size):
             if abs(self._eqval[i]) > self._tol:
                 self._eqpen[i] = min(self._eqpen[i]*self._cup,self._rmax)

@@ -40,6 +40,9 @@ class ExternalRun:
     def addParameter(self,param):
         self._parameters.append(param)
 
+    def getParameters(self):
+        return self._parameters
+
     def setWorkDir(self,dir):
         self._workDir = dir
 

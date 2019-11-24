@@ -90,5 +90,6 @@ driver.addObjective("min",fun1,0.5)
 driver.addObjective("min",fun2,0.5)
 driver.addUpperBound(fun3,2.0)
 
+driver.preprocessVariables()
+
 # now by calling driver.fun or driver.grad the driver should do all the work
-fun1.getValue()

@@ -41,42 +41,55 @@ Pass it to the optimization.
 A DRIVER is composed of:
   - objectives
   - constraints
-  - input variables (forming the design vector)
-  - parameters (parameter vector)
 It exposes methods to:
   - evaluate the penalized objective function
   - and its gradient
   - update penalties
   - setup all that is required
 
-OBJECTIVES and CONTRAINTS decorate(?):
-  FUNCTIONS
-To add:
+Objectives and constraints are FUNCTIONS that have been assigned a role when
+they were added to the DRIVER along with the following data:
   - type (min/max, =, >, <, <.<)
   - scale
   - weight (for when objectives are combined)
   - bounds (of the constraints)
-? These may not need to be classes, the function may contain its role.
-  Since the driver handles the constraints it could make sense to set the role
-  as the function is added to the driver.
 
 FUNCTIONS are defined by:
-  - output variable
-  - and its gradient
-  - value evaluation method
-  - gradient evaluation method
+  - output variable (defined by source file and respective parser)
+  - value evaluation method(s)
+  - gradient evaluation method(s)
+  - input variables and their gradient sources (files and parsers)
 It exposes methods to:
-  - evaluate the function (taking the design vector and the parameters as args)
+  - obtain the function
   - and its gradient
+  - setup the object
+Evaluating the function may require multiple steps (evaluation objects), for
+now these will be run in the order specified by the user and if data transfer
+between them is need the user needs to specify it explicitly.
 
-OUTPUT_VARIABLE:
-  - value and gradient source files
-  - parsing rules (maybe even a whole method)
-(one output, one set of files, specified at construction)
+EVALUATION has:
+  - config files (where inputs and parameters are set)
+  - data files (e.g. mesh, initialization, etc.)
+  - run instructions
+  - parameters (akin to input variables)
+  - working (sub)directory, sub directory inside driver working directory
+Evaluation methods can be shared by functions and are lazy, i.e. run as needed.
+
+What happens when running an evaluation?
+  - The directory is created, the input files are moved into it (symbolic links
+    are more efficient but maybe not compatible with windows?)
+  - The Popen object is created
+  - The evaluation parameters and function variables are written as the files
+    are copied.
+  - The process is started (with the option to wait for it)
+(note: at some point it may make sense to reuse directories, update only config
+       and make use of generated data without moving, for now each eval will
+       require its own directory)
 
 INPUT_VARIABLE has:
   - initial value
   - current value
+  - scale
   - bounds
   - type (scalar or vector)
   - parsing rule to be written to file
@@ -85,26 +98,6 @@ PARAMETER is akin to input variable but:
   - does not need to be a number
   - is updated, e.g. incremented, rather than set by the optimizer
 
-EVALUATION has:
-  - config files (where inputs and parameters are set)
-  - data files (mesh, initialization, etc.)
-  - run instructions
-Evaluation methods can be shared by functions and they should be lazy, i.e.
-run only as needed.
-Evaluations need to be chained to create pre/post processing steps like
-deforming the grid. This may be achieved by adding a sequence of evaluations to
-the function, without any explicit link other than the order.
-What should constitute a run and what happens during it?
-  - working directory (sub directory inside 
-  - the input files above
-  - output files? as they may be required for other operations of the pipeline,
-    this may be done explicitly by the user 
-The directory is created, the input files are moved into it (symbolic links are
-more efficient but maybe not compatible with windows?), the Popen object is
-created. (the evaluation parameters are written as the files are copied)
-At this stage the config files can be updated by the function before the run.
-(note: at some point it may make sense to reuse directories, update only config
-       and make use of generated data without moving)
 
 # File parsing methods
 - Scalar input variables and parameters are parsed with the template and label
@@ -128,22 +121,33 @@ dependency need not be established?
 It is the derived driver that needs to create the schedule as some optimization
 methods do not call for evaluation of all functions in one iteration.
 
-# Ownership of variables
-Should input variables and parameters be owned by functions of by the drivers?
-The gradients need to be associated with input variables.
-It would be convinient if we could pass the entire vector of parameters and
-variables to the evaluation of a function. But at the same time it would be
-nice to allow the same template file to be used for multiple functions, that
-would require different parameters to have the same label, therefore each
-function would need its own parameters.
-Associating variables to functions is more cumbersome, it would require
-duplication in the setup script and duplicates would have to be removed by the
-driver.
+# Ownership of variables and parameters
+Input variables are owned by functions because:
+  - Some functions may not take all variables
+  - One needs to link the derivative of the function to the variable
+Parameters are owned by evaluations because:
+  - This can be used to taylor the same template config file to multiple
+    evaluations, instead of having to prepare multiple templates (which risk
+    losing consistency with each other)
 
-Output variable may be dropped, the gradient parser needs to be associated
-with input variables as they are added to a function or evaluation method,
-which would leave the output variable class empty. Also the output file should
-be set in the evaluation method so it can be managed by it.
+Implications to the user:
+  - Variables that are shared between functions will have to be added multiple
+    times, which is tedious but necessary to link them with their gradient.
+
+Implications to the DRIVER:
+  - The driver needs to liason between the design vector that the optimizer
+    creates and the variables, i.e. it needs to map variables to locations
+    of the design vector
+  - Moreover, it needs to avoid updating variables (and especially parameters)
+    multiple times
+  - A preprocessing step is needed where the driver obtains the variables and
+    parameters from the functions and evaluations, removes duplicates and sorts
+    them in an order that is familiar to the user
+
+Implications to FUNCTION:
+  - When functions return the gradients w.r.t. their variables they need to
+    accept a mask (created by the driver) that allows them to return results
+    in the correct order, location, size.
 
 # Data/control flow
 What happens when the optimizer requests the driver to evaluate the objective

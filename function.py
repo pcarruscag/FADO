@@ -39,6 +39,17 @@ class Function:
         self._gradFiles.append(gradFile)
         self._gradParse.append(gradParser)
 
+    def getVariables(self):
+        return self._variables
+
+    def getParameters(self):
+        parameters = []
+        for evl in self._funEval:
+            parameters += evl.getParameters()
+        for evl in self._gradEval:
+            parameters += evl.getParameters()
+        return parameters
+
     def setOutput(self,file,parser):
         self._outFile = file
         self._outParser = parser
@@ -55,19 +66,24 @@ class Function:
             self._sequentialEval(self._funEval)
         return self._outParser.read(self._outFile)
 
-    def getGradient(self):
+    def getGradient(self,mask=None):
         # check if we can retrive the gradient
         if not self._gradEval[-1].isRun():
             self._sequentialEval(self._gradEval)
-        
+
+        # determine size of gradient vector
         size = 0
-        for var in self._variables:
+        if mask is None: src = self._variables
+        else:            src = mask.keys()
+        for var in src:
             size += var.getSize()
 
+        # populate gradient vector
         gradient = np.ndarray((size,))
         idx = 0
-        for file,parser in zip(self._gradFiles,self._gradParse):
+        for var,file,parser in zip(self._variables,self._gradFiles,self._gradParse):
             grad = parser.read(file)
+            if mask is not None: idx = mask[var]
             try:
                 for val in grad:
                     gradient[idx] = val
