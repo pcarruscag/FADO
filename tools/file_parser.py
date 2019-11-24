@@ -42,6 +42,62 @@ class LabelReplacer:
 #end
 
 
+# Read or write "delim"-separated values in front of a label (pre-string)
+class PreStringHandler:
+    def __init__(self,label,delim=","):
+        self._label = label
+        self._delim = delim
+
+    def read(self,file):
+        fid = open(file,"r")
+        lines = fid.readlines()
+        fid.close()
+
+        for line in lines:
+            if line.startswith(self._label):
+                data = line.lstrip(self._label).strip().split(self._delim)
+            #end
+        #end
+
+        size = len(data)
+        if size==1: return float(data[0])
+
+        value = np.ndarray((size,))
+        for i in range(size):
+            value[i] = float(data[i])
+        
+        return value
+    #end
+
+    def write(self,file,value):
+        fid = open(file,"r")
+        lines = fid.readlines()
+        fid.close()
+
+        # make scalars iterable
+        if isinstance(value,float) or isinstance(value,int):
+            value = [value]
+
+        newLine = ""
+        for i in range(len(lines)):
+            if lines[i].startswith(self._label):
+                if not newLine:
+                    newLine += self._label
+                    for val in value:
+                        newLine += str(val)+self._delim
+                    newLine = newLine[0:-1]+"\n"
+                #end
+                lines[i] = newLine
+            #end
+        #end
+
+        fid = open(file,"w")
+        fid.writelines(lines)
+        fid.close()
+    #end
+#end
+
+
 # Read from a table-like file
 class TableReader:
     # use row/col=None to return entire columns/rows, and -1 for "last"
