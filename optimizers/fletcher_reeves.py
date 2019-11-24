@@ -74,7 +74,7 @@ def fletcherReeves(fun,x,grad,options,lineSearch=goldenSection):
         
         # line search
         f_old = f
-        (lbd,f,nls) = lineSearch(lsfun(fun,x,S),maxls,f,lbd,tolls)
+        (lbd,f,nls) = lineSearch(lsfun(fun,x,S),maxls,f,(lbd,1.0)[lbd<0],tolls)
         feval += nls
 
         # detect bad direction and restart
@@ -83,9 +83,9 @@ def fletcherReeves(fun,x,grad,options,lineSearch=goldenSection):
                 if verbose: print("Bad search direction, taking steepest descent.")
                 f = f_old
                 S = -G
-                (lbd,f,nls2) = lineSearch(lsfun(fun,x,S),maxls,f,lbd,tolls)
+                (lbd,f,nls2) = lineSearch(lsfun(fun,x,S),maxls,f,1.0,tolls)
                 nls += nls2
-                feval += nls
+                feval += nls2
             #end
             if f>f_old:
                 f = f_old

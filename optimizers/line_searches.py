@@ -119,9 +119,9 @@ def quadraticInterp(fun,maxiter,f0=None,lbd0=1,tol=1e-3):
     #end
 
     # iterate
-    y_ref = max(max(y),-min(y))
+    y_ref = max(max(y),-min(y),tol)
     
-    while feval < maxiter:
+    while True:
         # compute x_opt'
         det = (x[0]-x[1])*(x[1]-x[2])*(x[2]-x[0])
         a = y[0]*x[1]*x[2]*(x[2]-x[1]) + y[1]*x[2]*x[0]*(x[0]-x[2]) + y[2]*x[0]*x[1]*(x[1]-x[0])
@@ -135,32 +135,23 @@ def quadraticInterp(fun,maxiter,f0=None,lbd0=1,tol=1e-3):
         y_min = fun(x_opt)
         feval += 1
 
+        if y_min > max(y):
+            print("The quadratic approximation is not convex.")
+            x_opt = sorted(zip(y,x))[0][1]
+            y_min = min(y)
+            break
+        #end
+
         # check convergence
-        if abs(y_min-y_star)/y_ref < tol:
+        if abs(y_min-y_star)/y_ref < tol or feval >= maxiter:
             break
 
         # drop highest point
-        if x_opt > x[1]:
-            if y_min < y[1]:
-                x[0] = x[1]
-                y[0] = y[1]
-                x[1] = x_opt
-                y[1] = y_min
-            else:
-                x[2] = x_opt
-                y[2] = y_min
-            #end
-        else:
-            if y_min < y[1]:
-                x[2] = x[1]
-                y[2] = y[1]
-                x[1] = x_opt
-                y[1] = y_min
-            else:
-                x[0] = x_opt
-                y[0] = y_min
-            #end
-        #end
+        x.append(x_opt)
+        y.append(y_min)
+        yx = sorted(zip(y,x))
+        x = [z for _,z in yx][:-1]
+        y = [z for z,_ in yx][:-1]
     #end
 
     return (x_opt,y_min,feval)

@@ -27,15 +27,17 @@ class BoundConstraints:
         self._lb = lb
         self._range = ub-lb
         self._partials = None
+        self._y = None
     #end
 
     def __call__(self,x):
-        self._partials = 2.0*self._range*np.cos(x)*np.sin(x)
-        return self._lb+self._range*np.sin(x)**2.0
+        self._y = 0.5*np.pi*(x-self._lb)/self._range
+        self._partials = 0.5*np.pi*np.sin(2.0*self._y)
+        return self._lb+self._range*np.sin(self._y)**2.0
     #end
 
     def inverse(self,x):
-        return np.arcsin(np.sqrt((x-self._lb)/self._range))
+        return np.arcsin(np.sqrt((x-self._lb)/self._range))*2.0/np.pi*self._range+self._lb
     #end
 
     def fun(self,x):

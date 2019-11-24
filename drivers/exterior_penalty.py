@@ -245,7 +245,7 @@ class ExteriorPenaltyDriver(DriverBase):
 
         # combine results
         f  = self._ofval.sum()
-        f += ((self._eqval*self._eqpen)**2).sum()
+        f += (self._eqpen*self._eqval**2).sum()
         for (g,r) in zip(self._ltval,self._ltpen): f += r*max(0.0,g)*g
         for (g,r) in zip(self._gtval,self._gtpen): f += r*min(0.0,g)*g
         for (g,r) in zip(self._inval,self._inpen): f += r*(min(0.0,g)+max(1.0,g)-1.0)*g
