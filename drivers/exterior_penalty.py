@@ -17,7 +17,7 @@
 
 import time
 import numpy as np
-from base_driver import DriverBase
+from drivers.base_driver import DriverBase
 
 
 # Exterior Penalty method wrapper

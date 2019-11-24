@@ -84,7 +84,8 @@ class DriverBase:
         self._constraintIN.append(self._Constraint(function,scale,lower,upper))
 
     def getNumVariables(self):
-        N=0; for var in self._variables: N+=var.getSize()
+        N=0
+        for var in self._variables: N+=var.getSize()
         return N
 
     # methods to retrieve information in a format that the optimizer understands
