@@ -43,6 +43,12 @@ class Function:
         self._outFile = file
         self._outParser = parser
 
+    def addValueEvalStep(self,evaluation):
+        self._funEval.append(evaluation)
+
+    def addGradientEvalStep(self,evaluation):
+        self._gradEval.append(evaluation)
+
     def getValue(self):
         return self._outParser.read(self._outFile)
 

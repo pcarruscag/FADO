@@ -115,19 +115,3 @@ class Parameter:
             value = self._function(value)
         self._parser.write(file,value)
 #end
-
-
-# Class for output variables
-class OutputVariable:
-    def __init__(self,valFile,valParser,gradFile,gradParser):
-        self._valFile = valFile
-        self._valParser = valParser
-        self._gradFile = gradFile
-        self._gradParser = gradParser
-
-    def getVal(self):
-        return self._valParser(self._valFile)
-
-    def getGrad(self):
-        return self._gradParser(self._gradFile)
-#end

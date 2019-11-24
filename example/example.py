@@ -68,13 +68,26 @@ evalJac3.addParameter(parFunc2)
 fun1 = Function("Rosenbrock1","RUN1/results.txt",TableReader(0,0))
 fun1.addInputVariable(var1,"JAC1/gradient.txt",TableReader(0,0))
 fun1.addInputVariable(var2,"JAC1/gradient.txt",TableReader(1,0))
+fun1.addValueEvalStep(evalFun1)
+fun1.addGradientEvalStep(evalJac1)
 
 fun2 = Function("Rosenbrock2","RUN2/results.txt",TableReader(0,0))
 fun2.addInputVariable(var1,"JAC2/gradient.txt",TableReader(0,0))
 fun2.addInputVariable(var2,"JAC2/gradient.txt",TableReader(1,0))
+fun2.addValueEvalStep(evalFun2)
+fun2.addGradientEvalStep(evalJac2)
 
 fun3 = Function("Constraint2","RUN2/results.txt",TableReader(1,0))
 fun3.addInputVariable(var1,"JAC3/gradient.txt",TableReader(0,0))
 fun3.addInputVariable(var2,"JAC3/gradient.txt",TableReader(1,0))
+fun3.addValueEvalStep(evalFun2)
+fun3.addGradientEvalStep(evalJac3)
 
+# Driver
+# the optimization is defined by the objectives and constraints
+driver = ExteriorPenaltyDriver(0.005)
+driver.addObjective("min",fun1,0.5)
+driver.addObjective("min",fun2,0.5)
+driver.addUpperBound(fun3,2.0)
 
+# now by calling driver.fun or driver.grad the driver should do all the work

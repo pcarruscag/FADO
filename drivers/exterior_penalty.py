@@ -23,6 +23,8 @@ from drivers.base_driver import DriverBase
 # Exterior Penalty method wrapper
 class ExteriorPenaltyDriver(DriverBase):
     def __init__(self, tol, freq=40, rini=8, rmax=1024, factorUp=4, factorDown=0.5):
+        super(ExteriorPenaltyDriver,self).__init__()
+        
         # parameters of the method
         self._tol = tol
         self._freq = freq
@@ -109,7 +111,7 @@ class ExteriorPenaltyDriver(DriverBase):
         return f
     #end
 
-    def jac(self,x):
+    def grad(self,x):
         # evaluate all required gradients (skip those where constraint is not active)
         self._jacEval += 1
         self._jacTime -= time.time()

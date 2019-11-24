@@ -26,7 +26,7 @@ class DriverBase:
     class _Objective:
         def __init__(self,type,function,scale,weight):
             if scale <= 0.0 or weight <= 0.0:
-                raise ValueError("Scale and weight must be possitive.")
+                raise ValueError("Scale and weight must be positive.")
 
             if type == "min":
                 self.scale = scale*weight
@@ -41,11 +41,11 @@ class DriverBase:
     class _Constraint:
         def __init__(self,function,scale,bound1=-1E20,bound2=1E20):
             if scale <= 0.0:
-                raise ValueError("Scale must be possitive.")
+                raise ValueError("Scale must be positive.")
 
             self.scale = scale
-            self.bound1 = bnd1
-            self.bound2 = bnd2
+            self.bound1 = bound1
+            self.bound2 = bound2
             self.function = function
     #end
 
@@ -58,6 +58,7 @@ class DriverBase:
         self._constraintsLT = []
         self._constraintsGT = []
         self._constraintsIN = []
+        self.__workDir = "__WORKDIR__"
     #end
 
     def addVariable(self,variable,scale=1.0):
@@ -74,14 +75,14 @@ class DriverBase:
         self._constraintsEQ.append(self._Constraint(function,scale,target))
 
     def addUpperBound(self,function,bound=0.0,scale=1.0):
-        self._contraintsLT.append(self._Constraint(function,scale,bound))
+        self._constraintsLT.append(self._Constraint(function,scale,bound))
 
     def addLowerBound(self,function,bound=0.0,scale=1.0):
-        self._contraintsGT.append(self._Constraint(function,scale,bound))
+        self._constraintsGT.append(self._Constraint(function,scale,bound))
 
     def addUpLowBound(self,function,lower=-1.0,upper=1.0):
         scale = 1.0/(upper-lower)
-        self._constraintIN.append(self._Constraint(function,scale,lower,upper))
+        self._constraintsIN.append(self._Constraint(function,scale,lower,upper))
 
     def getNumVariables(self):
         N=0
