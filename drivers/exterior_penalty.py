@@ -19,6 +19,7 @@ import os
 import time
 import shutil
 import numpy as np
+import subprocess as sp
 from drivers.base_driver import DriverBase
 
 
@@ -61,6 +62,8 @@ class ExteriorPenaltyDriver(DriverBase):
         self._keepDesigns = True
         self._isFeasible = False
         self._logRowFormat = ""
+        self._userPreProcessFun = ""
+        self._userPreProcessGrad = ""
 
         # variables for parallelization of evaluations
         self._parallelEval = False
@@ -180,6 +183,11 @@ class ExteriorPenaltyDriver(DriverBase):
     def fun(self,x):
         self._initialize()
 
+        if self._userPreProcessFun:
+            os.chdir(self._userDir)
+            sp.call(self._userPreProcessFun,shell=True)
+        #end
+
         # manage working directories
         os.chdir(self._userDir)
         if os.path.isdir(self._workDir):
@@ -257,6 +265,11 @@ class ExteriorPenaltyDriver(DriverBase):
     #end
 
     def grad(self,x):
+        if self._userPreProcessGrad:
+            os.chdir(self._userDir)
+            sp.call(self._userPreProcessGrad,shell=True)
+        #end
+        
         os.chdir(os.path.join(self._userDir,self._workDir))
         
         # initializing and updating values was done when evaluating the function
@@ -350,6 +363,12 @@ class ExteriorPenaltyDriver(DriverBase):
 
     def setStorageMode(self,keepDesigns=False):
         self._keepDesigns = keepDesigns
+
+    def setUserPreProcessFun(self,command):
+        self._userPreProcessFun = command
+
+    def setUserPreProcessGrad(self,command):
+        self._userPreProcessGrad = command
 
     # build evaluation graphs for parallel execution
     def setEvaluationMode(self,parallel=True,waitTime=10.0):
