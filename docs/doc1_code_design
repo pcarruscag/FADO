@@ -33,6 +33,7 @@ framework just aims to make this easier.
 Create objects that represent the various components (functions, etc.).
 Setup the driver with these objectives.
 Pass it to the optimization.
+(See example.py)
 
 
 ### Design ###
@@ -79,14 +80,16 @@ INPUT_VARIABLE has:
   - type (scalar or vector)
   - parsing rule to be written to file
 
-PARAMETER decorates an input variable:
+PARAMETER is akin to input variable but:
   - does not need to be a number
-  - can be updated, i.e. incremented
+  - is updated, e.g. incremented, rather than set by the optimizer
 
-EVAL_METHOD has:
+EVALUATION has:
   - config files (where inputs and parameters are set)
   - data files (mesh, initialization, etc.)
   - run instructions
+Evaluation methods can be shared by functions and they should be lazy, i.e.
+run only as needed.
 
 # File parsing methods
 - Scalar input variables and parameters are parsed with the template and label
@@ -99,5 +102,14 @@ EVAL_METHOD has:
   simpler formating, most of them can be treated as tables, one specifies row,
   column, separator(?) and header rows (to skip). For very special cases an
   entire user-defined method can be used.
+
+# Parallel execution
+This refers to the simultaneous evaluation of functions and their gradients,
+not to the individual parallelization of those tasks.
+An evaluation schedule needs to be created at the level of the evaluation
+methods (not the function as those may share evaluations).
+The optimization methods separate functions and gradient evaluation so that
+dependency need not be established?
+
 
 
