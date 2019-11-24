@@ -59,6 +59,7 @@ class ExteriorPenaltyDriver(DriverBase):
         self._isInit = False
         self._dirPrefix = "DSN_"
         self._keepDesigns = True
+        self._isFeasible = False
 
         # variables for parallelization of evaluations
         self._parallelEval = False
@@ -199,7 +200,8 @@ class ExteriorPenaltyDriver(DriverBase):
         self._jacTime += time.time()
 
         # update penalties and params (evaluating the gradient concludes an outer iteration)
-        if self._jacEval % self._freq is 0: self._update()
+        if self._freq > 0:
+            if self._jacEval % self._freq is 0: self.update()
 
         self._resetAllGradientEvaluations()
         os.chdir(self._userDir)
@@ -209,16 +211,20 @@ class ExteriorPenaltyDriver(DriverBase):
 
     # if the constraint is active and above tolerance increase the penalty
     # otherwise decrease (minimum and maximum are constrained)
-    def _update(self):
+    def update(self,paramsIfFeasible=False):
+        self._isFeasible = True
+        
         # equality (always active)
         for i in range(self._eqpen.size):
             if abs(self._eqval[i]) > self._tol:
                 self._eqpen[i] = min(self._eqpen[i]*self._cup,self._rmax)
+                self._isFeasible = False
 
         # upper bound
         for i in range(self._ltpen.size):
             if self._ltval[i] > self._tol:
                 self._ltpen[i] = min(self._ltpen[i]*self._cup,self._rmax)
+                self._isFeasible = False
             elif self._ltval[i] < 0.0:
                 self._ltpen[i] = max(self._ltpen[i]*self._cdown,self._rini)
 
@@ -226,6 +232,7 @@ class ExteriorPenaltyDriver(DriverBase):
         for i in range(self._gtpen.size):
             if self._gtval[i] < -self._tol:
                 self._gtpen[i] = min(self._gtpen[i]*self._cup,self._rmax)
+                self._isFeasible = False
             elif self._gtval[i] > 0.0:
                 self._gtpen[i] = max(self._gtpen[i]*self._cdown,self._rini)
 
@@ -233,13 +240,18 @@ class ExteriorPenaltyDriver(DriverBase):
         for i in range(self._inpen.size):
             if self._inval[i] > 1.0+self._tol or self._inval[i] < -self._tol:
                 self._inpen[i] = min(self._inpen[i]*self._cup,self._rmax)
+                self._isFeasible = False
             elif self._inval[i] < 1.0 and self._inval[i] > 0.0:
                 self._inpen[i] = max(self._inpen[i]*self._cdown,self._rini)
 
         # update the values of the parameters
-        for par in self._parameters:
-            par.increment()
+        if not paramsIfFeasible or self._isFeasible:
+            for par in self._parameters:
+                par.increment()
     #end
+
+    def feasibleDesign(self):
+        return self._isFeasible
 
     def setStorageMode(self,keepDesigns=False):
         self._keepDesigns = keepDesigns
