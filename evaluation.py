@@ -16,3 +16,16 @@
 #  along with FADO.  If not, see <https://www.gnu.org/licenses/>.
 
 
+# Class to define an execution of an external code
+class ExternalRun:
+    def __init__(self):
+        self._dataFiles = []
+        self._confFiles = []
+
+    def addData(self,file):
+        self._dataFiles.append(file)
+
+    def addConfig(self,file):
+        self._confFiles.append(file)
+
+    

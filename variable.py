@@ -25,9 +25,7 @@ class InputVariable:
     # size >= 1 defines a vector variable whose x0, lb, and ub values are broadcast
     # size == 0 means auto, size determined from x0, lb/ub must be compatible or scalar
     def __init__(self, x0, parser, size=0, lb=-1E20, ub=1E20):
-
         self._parser = parser
-        self._scale = scale
 
         if size == 0 and isinstance(x0,float): size=1
         if size >= 1:

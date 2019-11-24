@@ -114,6 +114,23 @@ dependency need not be established?
 It is the derived driver that needs to create the schedule as some optimization
 methods do not call for evaluation of all functions in one iteration.
 
+# Ownership of variables
+Should input variables and parameters be owned by functions of by the drivers?
+The gradients need to be associated with input variables.
+It would be convinient if we could pass the entire vector of parameters and
+variables to the evaluation of a function. But at the same time it would be
+nice to allow the same template file to be used for multiple functions, that
+would require different parameters to have the same label, therefore each
+function would need its own parameters.
+Associating variables to functions is more cumbersome, it would require
+duplication in the setup script and duplicates would have to be removed by the
+driver.
+
+Output variable may be dropped, the gradient parser needs to be associated
+with input variables as they are added to a function or evaluation method,
+which would leave the output variable class empty. Also the output file should
+be set in the evaluation method so it can be managed by it.
+
 # Data/control flow
 What happens when the optimizer requests the driver to evaluate the objective
 function.

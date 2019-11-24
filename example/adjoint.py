@@ -24,7 +24,7 @@ f1 = (a-x)**2+b(y-x**2)**2
 # A simple linear constraint
 f2 = x+y
 
-if mode.startswith("rosen"):
+if mode.startswith("rosenbrock"):
     dfdx = 2*(x-a)+4*b*x*(x**2-y)
     dfdy = 2*b*(y-x**2)
 else:

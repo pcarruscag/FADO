@@ -18,6 +18,21 @@
 
 # Replace text labels by values
 class LabelReplacer:
-    def __init__(self):
-        pass
+    def __init__(self,label):
+        self._label = label
 
+    def write(self,file,value):
+        fid = open(file,"r")
+        lines = fid.readlines()
+        fid.close()
+
+        newlines = []
+        for line in lines:
+            newlines.append(line.replace(self._label,str(value)))
+        #end
+
+        fid = open(file,"w")
+        fid.writelines(newlines)
+        fid.close()
+    #end
+#end
