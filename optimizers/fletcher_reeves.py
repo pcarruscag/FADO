@@ -16,6 +16,7 @@
 #  along with FADO.  If not, see <https://www.gnu.org/licenses/>.
 
 from optimizers.line_searches import goldenSection
+import numpy as np
 
 
 # Fletcher-Reeves method
@@ -56,7 +57,7 @@ def fletcherReeves(fun,x,grad,options,lineSearch=goldenSection):
     # initialize
     feval = 1
     jeval = 1
-    lbd = 1.0
+    lbd = -1
     f = fun(x)
     G = grad(x)
     success = False
@@ -71,14 +72,16 @@ def fletcherReeves(fun,x,grad,options,lineSearch=goldenSection):
         if i%restart==0 : S=-G
 
         if verbose and i%10==0 and i>0: print(headerLine)
-        
+
         # line search
+        if lbd<=0: lbd = 1.0
+        else: lbd *= max(abs(S))/max(abs(S_old))
         f_old = f
-        (lbd,f,nls) = lineSearch(lsfun(fun,x,S),maxls,f,(lbd,1.0)[lbd<0],tolls)
+        (lbd,f,nls) = lineSearch(lsfun(fun,x,S),maxls,f,lbd,tolls)
         feval += nls
 
         # detect bad direction and restart
-        if f>f_old:
+        if f>f_old or lbd==0:
             if i%restart!=0: # otherwise we already have S=-G
                 if verbose: print("Bad search direction, taking steepest descent.")
                 f = f_old
@@ -87,9 +90,17 @@ def fletcherReeves(fun,x,grad,options,lineSearch=goldenSection):
                 nls += nls2
                 feval += nls2
             #end
-            if f>f_old:
-                f = f_old
+            if f>f_old or lbd==0:
                 if verbose: print("Could not improve along steepest descent direction.")
+                f = f_old
+                S = 2*(1-np.random.rand(S.size))*max(abs(S))
+                (lbd,f,nls2) = lineSearch(lsfun(fun,x,S),maxls,f,1.0,tolls)
+                nls += nls2
+                feval += nls2
+            #end
+            if f>f_old or lbd==0:
+                if verbose: print("Could not improve along random direction.")
+                f = f_old
                 break
             #end
         #end
