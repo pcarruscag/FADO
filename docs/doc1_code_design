@@ -100,7 +100,6 @@ PARAMETER is akin to input variable but:
   - does not need to be a number
   - is updated, e.g. incremented, rather than set by the optimizer
 
-
 # File parsing methods
 - Scalar input variables and parameters are parsed with the template and label
   strategy, i.e. the user provides a file with labels that will be replaced by
@@ -155,7 +154,6 @@ P We only want to compute the gradient of active constraints.
 S First we assume no evaluation is needed, then for all objectives and active
   constraints we mark the associated evaluations as needed. Moreover, some
   (unlikely) multilevel dependencies may also activate evaluations.
-  
 
 # Ownership of variables and parameters
 Input variables are owned by functions because:
@@ -243,4 +241,16 @@ custom objects to be attached to the driver which may print and/or write to
 file or possibly even plot.
 The "logger" monitors events like the updates of the exterior penalty method,
 the "historian" registers convergence history.
+
+# Reliability
+Software is not perfect. To make optimizations more resilient to exceptional
+circumstances the evaluations should have a mechanism by which the success of
+the run can be determined, in case of failure the run is retried, this is the
+simplest reliability mechanism, a more complex strategy would be a retry with
+different settings (a fallback).
+A simple way of measuring success is via the existence of some expected output
+file(s) (set by the user).
+For cases where failure is inevitable (e.g. aggressive step in line search)
+functions may be given default values (the effectiveness of this needs to be
+tested).
 

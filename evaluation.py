@@ -25,9 +25,12 @@ class ExternalRun:
     def __init__(self,dir,command,useSymLinks=False):
         self._dataFiles = []
         self._confFiles = []
+        self._expectedFiles = []
         self._workDir = dir
         self._command = command
         self._symLinks = useSymLinks
+        self._maxTries = 1
+        self._numTries = 0
         self._process = None
         self._variables = set()
         self._parameters = []
@@ -62,6 +65,13 @@ class ExternalRun:
     def addParameter(self,param):
         self._parameters.append(param)
 
+    def addExpected(self,file):
+        # consider always relative
+        self._expectedFiles.append(os.path.join(self._workDir,file))
+
+    def setMaxTries(self,num):
+        self._maxTries = num
+
     def getParameters(self):
         return self._parameters
 
@@ -84,32 +94,68 @@ class ExternalRun:
             for var in self._variables:
                 var.writeToFile(target)
 
+        self._createProcess()
+        self._isIni = True
+    #end
+
+    def _createProcess(self):
         self._stdout = open(os.path.join(self._workDir,"stdout.txt"),"w")
         self._stderr = open(os.path.join(self._workDir,"stderr.txt"),"w")
 
         self._process = sp.Popen(self._command,cwd=self._workDir,
                         shell=True,stdout=self._stdout,stderr=self._stderr)
-
-        self._isIni = True
     #end
 
+    # on failure this function recurses up to "maxTries" times
     def run(self,timeout=None):
         if not self._isIni:
             raise RuntimeError("Run was not initialized.")
-        if self._isRun: return self._retcode
+        if self._numTries == self._maxTries:
+            raise RuntimeError("Run failed.")
+        if self._isRun:
+            return self._retcode
+
         self._retcode = self._process.wait(timeout)
+        self._numTries += 1
+        
+        if not self._success():
+            self.finalize()
+            self._createProcess()
+            self._isIni = True
+            return self._run(timeout)
+        #end
+
+        self._numTries = 0
         self._isRun = True
         return self._retcode
+    #end
 
+    # again we recurse up to "maxTries" times
     def poll(self):
         if not self._isIni:
             raise RuntimeError("Run was not initialized.")
-        if self._isRun: return self._retcode
-        retcode = self._process.poll()
-        if retcode is not None:
-            self._retcode = retcode
+        if self._numTries == self._maxTries:
+            raise RuntimeError("Run failed.")
+        if self._isRun:
+            return self._retcode
+
+        if self._process.poll() is not None:
+            self._numTries += 1
+
+            if not self._success():
+                self.finalize()
+                self._createProcess()
+                self._isIni = True
+                return self.poll()
+            #end
+
+            self._numTries = 0
+            self._retcode = self._process.returncode
             self._isRun = True
+        #end
+
         return self._retcode
+    #end
 
     def isIni(self):
         return self._isIni
@@ -127,3 +173,12 @@ class ExternalRun:
         self._isIni = False
         self._isRun = False
         self._retcode = -100
+    #end
+
+    # check whether expected files were created
+    def _success(self):
+        for file in self._expectedFiles:
+            if not os.path.isfile(file): return False
+        return True
+    #end
+#end
