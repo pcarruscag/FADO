@@ -19,7 +19,7 @@ from optimizers.line_searches import goldenSection
 
 
 # Fletcher-Reeves method
-def fletcherReeves(fun,x,grad,options):
+def fletcherReeves(fun,x,grad,options,lineSearch=goldenSection):
     # unpack options
     ftol = options["ftol"]
     gtol = options["gtol"]
@@ -30,7 +30,7 @@ def fletcherReeves(fun,x,grad,options):
     if "maxcor" in options.keys(): restart = options["maxcor"]
     maxls = 20
     if "maxls" in options.keys(): maxls = options["maxls"]
-    tolls = 0.01
+    tolls = 0.001
     if "tolls" in options.keys(): tolls = options["tolls"]
 
     # 1D function for line searches
@@ -56,6 +56,7 @@ def fletcherReeves(fun,x,grad,options):
         for data in ["ITER","FUN EVAL","LS EVAL","STEP","FUN EPS","GRAD EPS","FUN VAL"]:
             headerLine += data.rjust(13)
         logFormat = "{:>13}"*3+"{:>13.6g}"*4
+        print("")
     #end
 
     # start
@@ -67,7 +68,7 @@ def fletcherReeves(fun,x,grad,options):
         
         # line search
         f_old = f
-        (lbd,f,nls) = goldenSection(lsfun(fun,x,S),maxls,f,lbd,tolls)
+        (lbd,f,nls) = lineSearch(lsfun(fun,x,S),maxls,f,lbd,tolls)
         feval += nls
 
         # detect bad direction and restart
@@ -75,7 +76,7 @@ def fletcherReeves(fun,x,grad,options):
             if verbose: print("Bad search direction, taking steepest descent.")
             f = f_old
             S = -G
-            (lbd,f,nls2) = goldenSection(lsfun(fun,x,S),maxls,f,lbd,tolls)
+            (lbd,f,nls2) = lineSearch(lsfun(fun,x,S),maxls,f,lbd,tolls)
             nls += nls2
             feval += nls
             if f>f_old:

@@ -80,3 +80,88 @@ def goldenSection(fun,maxiter,f0=None,lbd0=1,tol=1e-3):
 
     return (x_opt,y_min,feval)
 #end
+
+
+# 1D minimization using the Quadratic Interpolation method
+def quadraticInterp(fun,maxiter,f0=None,lbd0=1,tol=1e-3):
+    # initialize
+    feval = 0
+    x = [0.0, 0.0, 0.0]
+    if f0 is None:
+        f0 = fun(0.0)
+        feval += 1
+    y = [f0, 0.0, 0.0]
+
+    # bracket the minimum
+    # assuming we have a descent direction
+    f1 = fun(lbd0)
+    feval += 1
+
+    if f1 > f0:
+        x[2] = lbd0
+        y[2] = f1
+        x[1] = lbd0/2
+        y[1] = fun(x[1])
+        feval += 1
+    while f1 <= f0:
+        f2 = fun(2*lbd0)
+        feval += 1
+        if f2 > f1:
+            x[1] = lbd0
+            y[1] = f1
+            x[2] = 2*lbd0
+            y[2] = f2
+            break
+        else:
+            f1 = f2
+            lbd0 *= 2
+        #end
+    #end
+
+    # iterate
+    y_ref = max(max(y),-min(y))
+    
+    while feval < maxiter:
+        # compute x_opt'
+        det = (x[0]-x[1])*(x[1]-x[2])*(x[2]-x[0])
+        a = y[0]*x[1]*x[2]*(x[2]-x[1]) + y[1]*x[2]*x[0]*(x[0]-x[2]) + y[2]*x[0]*x[1]*(x[1]-x[0])
+        a /= det
+        b = y[0]*(x[1]**2-x[2]**2) + y[1]*(x[2]**2-x[0]**2) + y[2]*(x[0]**2-x[1]**2)
+        b /= det
+        c = -(y[0]*(x[1]-x[2]) + y[1]*(x[2]-x[0]) + y[2]*(x[0]-x[1]))/det
+
+        x_opt = -0.5*b/c
+        y_star = a+b*x_opt+c*x_opt**2
+        y_min = fun(x_opt)
+        feval += 1
+
+        # check convergence
+        if abs(y_min-y_star)/y_ref < tol:
+            break
+
+        # drop highest point
+        if x_opt > x[1]:
+            if y_min < y[1]:
+                x[0] = x[1]
+                y[0] = y[1]
+                x[1] = x_opt
+                y[1] = y_min
+            else:
+                x[2] = x_opt
+                y[2] = y_min
+            #end
+        else:
+            if y_min < y[1]:
+                x[2] = x[1]
+                y[2] = y[1]
+                x[1] = x_opt
+                y[1] = y_min
+            else:
+                x[0] = x_opt
+                y[0] = y_min
+            #end
+        #end
+    #end
+
+    return (x_opt,y_min,feval)
+#end
