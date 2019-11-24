@@ -15,6 +15,7 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with FADO.  If not, see <https://www.gnu.org/licenses/>.
 
+import os
 import numpy as np
 
 
@@ -59,7 +60,8 @@ class DriverBase:
         self._constraintsGT = []
         self._constraintsIN = []
         self._variableStartMask = None
-        self.__workDir = "__WORKDIR__"
+        self._userDir = ""
+        self._workDir = "__WORKDIR__"
     #end
 
     def addObjective(self,type,function,scale=1.0,weight=1.0):
@@ -77,6 +79,9 @@ class DriverBase:
     def addUpLowBound(self,function,lower=-1.0,upper=1.0):
         scale = 1.0/(upper-lower)
         self._constraintsIN.append(self._Constraint(function,scale,lower,upper))
+
+    def setWorkingDirectory(self,dir):
+        self._workDir = dir
 
     def getNumVariables(self):
         N=0
@@ -142,6 +147,9 @@ class DriverBase:
         self._variableStartMask = dict(zip(self._variables,idx))
 
         self._varScales = self._getConcatenatedVector("getScale")
+
+        # store the absolute current path
+        self._userDir = os.path.abspath(os.curdir)
     #end
 #end
 

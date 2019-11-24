@@ -15,7 +15,9 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with FADO.  If not, see <https://www.gnu.org/licenses/>.
 
+import os
 import time
+import shutil
 import numpy as np
 from drivers.base_driver import DriverBase
 
@@ -55,6 +57,7 @@ class ExteriorPenaltyDriver(DriverBase):
         self._jacEval = 0
         self._jacTime = 0
         self._isInit = False
+        self._dirPrefix = "DSN_"
     #end
 
     # method for lazy initialization
@@ -79,6 +82,16 @@ class ExteriorPenaltyDriver(DriverBase):
 
     def fun(self,x):
         self._initialize()
+
+        # manage working directories
+        os.chdir(self._userDir)
+        if os.path.isdir(self._workDir):
+            dirName = self._dirPrefix+str(self._funEval).rjust(3,"0")
+            if os.path.isdir(dirName): shutil.rmtree(dirName)
+            os.rename(self._workDir,dirName)
+        #end
+        os.mkdir(self._workDir)
+        os.chdir(self._workDir)
 
         # update the values of the variables
         self._setCurrent(x)
@@ -131,10 +144,14 @@ class ExteriorPenaltyDriver(DriverBase):
         for (g,r) in zip(self._gtval,self._gtpen): f += r*min(0.0,g)*g
         for (g,r) in zip(self._inval,self._inpen): f += r*(min(0.0,g)+max(1.0,g)-1.0)*g
 
+        os.chdir(self._userDir)
+
         return f
     #end
 
     def grad(self,x):
+        os.chdir(os.path.join(self._userDir,self._workDir))
+        
         # initializing and updating values was done when evaluating the function
 
         # evaluate all required gradients (skip those where the constraint is not active)
@@ -164,6 +181,8 @@ class ExteriorPenaltyDriver(DriverBase):
 
         # update penalties and params (evaluating the gradient concludes an outer iteration)
         if self._jacEval % self._freq is 0: self._update()
+
+        os.chdir(self._userDir)
 
         return self._grad
     #end

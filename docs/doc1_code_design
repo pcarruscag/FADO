@@ -165,5 +165,26 @@ First let's make the sequential version work:
   - The driver will evaluate the functions one by one, the functions direct the
     call to the evaluation method which will be lazy;
 
-
+Managing working directories:
+  - Evaluations and functions work relative to current directory, but for
+    convinience files should be specified relative to script.
+  - If the driver chdir's to its working directory prior to evaluation the
+    evaluations cannot find the files.
+  - File paths could be converted to absolute, but some are meant to be
+    relative to the execution directory, e.g. results from other evaluation
+  - Config files are always absolute, as after replacing labels they cannot
+    be re-used, only data files may be relative, and outputs are always
+    relative.
+The simplest solution is to rely on a user flag for data files, and it also
+avoids ambiguities like toplevel directories with the same name.
+Another simple option is to make the relative/absolute decision based on
+whether the file can be found when it is added (meaning absolute), perhaps this
+can be the "auto" and default mode.
+The driver can create and cd to its working directory in "preprocessVariables"
+or in evaluating the function.
+When a new evaluation starts, the old data (working directory) is saved by
+renaming the work dir (no copy), thereafter the work dir is recreated. This
+means the driver needs to cd in and out of it.
+For safety, in "preprocessVariables" the top level will be stored as an
+absolute path, the driver work dir is then always set with respect to this.
 

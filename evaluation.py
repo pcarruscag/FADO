@@ -31,11 +31,29 @@ class ExternalRun:
         self._parameters = []
         self.finalize()
 
-    def addData(self,file):
-        self._dataFiles.append(file)
+    def _addAbsoluteFile(self,file,flist):
+        file = os.path.abspath(file)
+        if not os.path.isfile(file):
+            raise ValueError("File '"+file+"' not found.")
+        flist.append(file)
+
+    def addData(self,file,location="auto"):
+        if location is "relative":
+            self._dataFiles.append(file)
+        else:
+            try:
+                self._addAbsoluteFile(file,self._dataFiles)
+            except:
+                if location is "absolute": raise
+                # in "auto" mode, if absolute fails consider relative
+                else: self._dataFiles.append(file)
+            #end
+        #end
+    #end
 
     def addConfig(self,file):
-        self._confFiles.append(file)
+        # config files are always assumed to be absolute
+        self._addAbsoluteFile(file,self._confFiles)
 
     def addParameter(self,param):
         self._parameters.append(param)
@@ -57,11 +75,12 @@ class ExternalRun:
             shutil.copy(file,self._workDir)
 
         for file in self._confFiles:
-            shutil.copy(file,self._workDir)
+            target = os.path.join(self._workDir,os.path.basename(file))
+            shutil.copy(file,target)
             for par in self._parameters:
-                par.writeToFile(os.path.join(self._workDir,file))
+                par.writeToFile(target)
             for var in variables:
-                var.writeToFile(os.path.join(self._workDir,file))
+                var.writeToFile(target)
 
         self._process = sp.Popen(self._command,cwd=self._workDir,
                         shell=True,stdout=sp.PIPE,stderr=sp.PIPE)
