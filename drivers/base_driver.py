@@ -15,6 +15,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with FADO.  If not, see <https://www.gnu.org/licenses/>.
 
+import numpy as np
+
 
 # Base class for optimization drivers
 # Implements the setup interface
@@ -49,6 +51,7 @@ class DriverBase:
 
     def __init__(self):
         self._variables = []
+        self._varScales = []
         self._parameters = []
         self._objectives = []
         self._constraintsEQ = []
@@ -57,8 +60,9 @@ class DriverBase:
         self._constraintsIN = []
     #end
 
-    def addVariable(self,variable):
+    def addVariable(self,variable,scale=1.0):
         self._variables.append(variable)
+        self._varScales.append(scale)
 
     def addParameter(self,parameter):
         self._parameters.append(parameter)
@@ -75,8 +79,46 @@ class DriverBase:
     def addLowerBound(self,function,bound=0.0,scale=1.0):
         self._contraintsGT.append(self._Constraint(function,scale,bound))
 
-    def addUpLowBound(self,function,lower=-1.0,upper=1.0,scale=1.0):
+    def addUpLowBound(self,function,lower=-1.0,upper=1.0):
+        scale = 1.0/(upper-lower)
         self._constraintIN.append(self._Constraint(function,scale,lower,upper))
+
+    def getNumVariables(self):
+        N=0; for var in self._variables: N+=var.getSize()
+        return N
+
+    # methods to retrieve information in a format that the optimizer understands
+    def _getConcatenatedVector(self,getterName):
+        x = np.ndarray((self.getNumVariables(),))
+        idx = 0
+        for var in self._variables:
+            for val in getattr(var,getterName)():
+                x[idx] = val
+                idx += 1
+            #end
+        #end
+        return x
+    #end
+    
+    def getInitial(self):
+        return self._getConcatenatedVector("getInitial")
+
+    def getLowerBound(self):
+        return self._getConcatenatedVector("getLowerBound")
+
+    def getUpperBound(self):
+        return self._getConcatenatedVector("getUpperBound")
+
+    # update design variables with design vector from the optimizer
+    def setCurrent(self,x):
+        startIdx = 0
+        for (var,scale) in zip(self._variables,self._varScales):
+            endIdx = startIdx+var.getSize()
+            var.setCurrent(x[startIdx:endIdx]/scale)
+            startIdx = endIdx
+        #end
+    #end
+
 #end
 
 
