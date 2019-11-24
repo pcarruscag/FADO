@@ -17,7 +17,6 @@ sys.path.append("../")
 sys.path.append("../../")
 
 from FADO import *
-import scipy.optimize
 
 # Design variables of the problem
 # this defines initial value and how they are written to an arbitrary file
@@ -86,22 +85,17 @@ fun3.addGradientEvalStep(evalJac3)
 
 # Driver
 # the optimization is defined by the objectives and constraints
-driver = ExteriorPenaltyDriver(0.005,5)
+driver = ExteriorPenaltyDriver(0.005,0)
 driver.addObjective("min",fun1,0.5)
 driver.addObjective("min",fun2,0.5)
 driver.addUpperBound(fun3,2.0)
 
 driver.preprocessVariables()
-driver.setEvaluationMode(True,1.0)
+driver.setStorageMode(False)
 
 # Optimization
 # now the "fun" and "grad" methods of the driver can be passed to an optimizer
 x  = driver.getInitial()
-lb = driver.getLowerBound()
-ub = driver.getUpperBound()
-bounds = np.array((lb,ub),float).transpose()
-options={'disp': True, 'maxcor': 10, 'ftol': 1e-12, 'gtol': 1e-12, 'maxiter': 200}
+options={'disp': True, 'maxcor': 10, 'ftol': 1e-6, 'gtol': 1e-5, 'maxiter': 200, 'maxls': 20}
 
-optimum = scipy.optimize.minimize(driver.fun, x, method="L-BFGS-B", jac=driver.grad,\
-                                  bounds=bounds, options=options)
-print(optimum.x)
+optimum = fletcherReeves(driver.fun,x,driver.grad,options)
