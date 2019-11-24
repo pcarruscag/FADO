@@ -1,0 +1,103 @@
+### Motivation ###
+Need an exterior penalty driver to run SU2 for FSI topology optimization with
+multiple constraints and mechanisms for added reliability (retries or fallback)
+and for data parallel execution (all adjoints at once).
+Moreover, different settings may be needed for different runs.
+
+
+### Assumptions ###
+Functions are evaluated by writing variables and parameters to file, running
+some commands and retrieving values from file.
+These functions are much more expensive than the optimization.
+The setup process is not meant to be generic at this stage, ad-hoc scripting
+will be required, e.g. setting file names, run commands and so on, the
+framework just aims to make this easier.
+
+
+### Requirements ###
+# General
+- Exterior penalty method for any number of constraints and functions.
+- Parallel or sequential evaluation of functions (and their gradients).
+- Completely abstract, no reliance on SU2 parameters.
+- A generic way to handle variables (even vector ones)
+- Allow for manipulation of parameters, e.g. to implement ramping strategies.
+- Keep results of each run.
+- Files should be handled in the most generic of ways.
+
+# Method specific
+- Equality, inequality, and inner range constraints.
+- Lazy evaluation of constraint gradients (only when needed).
+- Ramping of penalty factors based on constraint violation tolerance.
+
+# User experience
+Create objects that represent the various components (functions, etc.).
+Setup the driver with these objectives.
+Pass it to the optimization.
+
+
+### Design ###
+# World view
+A DRIVER is composed of:
+  - objectives
+  - constraints
+  - input variables (forming the design vector)
+  - parameters (parameter vector)
+It exposes methods to:
+  - evaluate the penalized objective function
+  - and its gradient
+  - update penalties
+  - setup all that is required
+
+OBJECTIVES and CONTRAINTS decorate(?):
+  FUNCTIONS
+To add:
+  - type (min/max, =, >, <, <.<)
+  - scale
+  - weight (for when objectives are combined)
+  - bounds (of the constraints)
+? These may not need to be classes, the function may contain its role.
+  Since the driver handles the constraints it could make sense to set the role
+  as the function is added to the driver.
+
+FUNCTIONS are defined by:
+  - output variable
+  - and its gradient
+  - value evaluation method
+  - gradient evaluation method
+It exposes methods to:
+  - evaluate the function (taking the design vector and the parameters as args)
+  - and its gradient
+
+OUTPUT_VARIABLE:
+  - value and gradient source files
+  - parsing rules (maybe even a whole method)
+
+INPUT_VARIABLE has:
+  - initial value
+  - current value
+  - bounds
+  - type (scalar or vector)
+  - parsing rule to be written to file
+
+PARAMETER decorates an input variable:
+  - does not need to be a number
+  - can be updated, i.e. incremented
+
+EVAL_METHOD has:
+  - config files (where inputs and parameters are set)
+  - data files (mesh, initialization, etc.)
+  - run instructions
+
+# File parsing methods
+- Scalar input variables and parameters are parsed with the template and label
+  strategy, i.e. the user provides a file with labels that will be replaced by
+  values (the label is the parsing rule basically). In the future a label
+  syntax can be developed to specify initial values and bounds in the template
+  file to make the scripts less case-specific.
+
+- Vector inputs and outputs require different strategies, these files have
+  simpler formating, most of them can be treated as tables, one specifies row,
+  column, separator(?) and header rows (to skip). For very special cases an
+  entire user-defined method can be used.
+
+
