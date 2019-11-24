@@ -74,13 +74,30 @@ class ExteriorPenaltyDriver(DriverBase):
         self._initialize()
 
         # evaluate everything
-        
+        self._funEval += 1
         self._funTime -= time.time()
-        f = self._driver.obj_val(x)
-        h = self._driver.con_val(x)
+        
         self._funTime += time.time()
 
-        # scale and shift as required
+        # shift constraints and scale as required
+        for i in range(self._ofval.size):
+            self._ofval[i] *= self._objectives[i].scale
+
+        for i in range(self._eqval.size):
+            self._eqval[i] -= self._constraintsEQ[i].bound1
+            self._eqval[i] *= self._constraintsEQ[i].scale
+
+        for i in range(self._ltval.size):
+            self._ltval[i] -= self._constraintsLT[i].bound1
+            self._ltval[i] *= self._constraintsLT[i].scale
+
+        for i in range(self._gtval.size):
+            self._gtval[i] -= self._constraintsGT[i].bound1
+            self._gtval[i] *= self._constraintsGT[i].scale
+
+        for i in range(self._inval.size):
+            self._inval[i] -= self._constraintsIN[i].bound1
+            self._inval[i] *= self._constraintsIN[i].scale
 
         # combine results
         f  = self._ofval.sum()
@@ -88,18 +105,21 @@ class ExteriorPenaltyDriver(DriverBase):
         for (g,r) in zip(self._ltval,self._ltpen): f += r*max(0.0,g)*g
         for (g,r) in zip(self._gtval,self._gtpen): f += r*min(0.0,g)*g
         for (g,r) in zip(self._inval,self._inpen): f += r*(min(0.0,g)+max(1.0,g)-1.0)*g
+
+        return f
     #end
 
     def jac(self,x):
-        
-        
+        # evaluate all required gradients (skip those where constraint is not active)
+        self._jacEval += 1
         self._jacTime -= time.time()
-        df = self._driver.obj_der(x)
-        dh = self._driver.con_der(x)
+        
         self._jacTime += time.time()
 
+        # scale gradients as required
 
-        return df+2*self._r*max(0.0,self._hval)*dh
+        # combine results
+        #return df+2*self._r*max(0.0,self._hval)*dh
     #end
 
     # if the constraint is active and above tolerance increase the penalty
