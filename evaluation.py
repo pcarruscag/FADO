@@ -30,6 +30,8 @@ class ExternalRun:
         self._process = None
         self._variables = set()
         self._parameters = []
+        self._stdout = None
+        self._stderr = None
         self.finalize()
 
     def _addAbsoluteFile(self,file,flist):
@@ -86,8 +88,11 @@ class ExternalRun:
             for var in self._variables:
                 var.writeToFile(target)
 
+        self._stdout = open(os.path.join(self._workDir,"stdout.txt"),"w")
+        self._stderr = open(os.path.join(self._workDir,"stderr.txt"),"w")
+
         self._process = sp.Popen(self._command,cwd=self._workDir,
-                        shell=True,stdout=sp.PIPE,stderr=sp.PIPE)
+                        shell=True,stdout=self._stdout,stderr=self._stderr)
 
         self._isIni = True
     #end
@@ -118,6 +123,11 @@ class ExternalRun:
 
     # reset "lazy" flags
     def finalize(self):
+        try:
+            self._stdout.close()
+            self._stderr.close()
+        except:
+            pass
         self._isIni = False
         self._isRun = False
         self._retcode = -100
