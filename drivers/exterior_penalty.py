@@ -58,6 +58,7 @@ class ExteriorPenaltyDriver(DriverBase):
         self._jacTime = 0
         self._isInit = False
         self._dirPrefix = "DSN_"
+        self._keepDesigns = True
 
         # variables for parallelization of evaluations
         self._parallelEval = False
@@ -92,9 +93,13 @@ class ExteriorPenaltyDriver(DriverBase):
         # manage working directories
         os.chdir(self._userDir)
         if os.path.isdir(self._workDir):
-            dirName = self._dirPrefix+str(self._funEval).rjust(3,"0")
-            if os.path.isdir(dirName): shutil.rmtree(dirName)
-            os.rename(self._workDir,dirName)
+            if self._keepDesigns:
+                dirName = self._dirPrefix+str(self._funEval).rjust(3,"0")
+                if os.path.isdir(dirName): shutil.rmtree(dirName)
+                os.rename(self._workDir,dirName)
+            else:
+                shutil.rmtree(self._workDir)
+            #end
         #end
         os.mkdir(self._workDir)
         os.chdir(self._workDir)
@@ -235,6 +240,9 @@ class ExteriorPenaltyDriver(DriverBase):
         for par in self._parameters:
             par.increment()
     #end
+
+    def setStorageMode(self,keepDesigns=False):
+        self._keepDesigns = keepDesigns
 
     # build evaluation graphs for parallel execution
     def setEvaluationMode(self,parallel=True,waitTime=10.0):

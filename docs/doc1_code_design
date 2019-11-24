@@ -105,11 +105,20 @@ PARAMETER is akin to input variable but:
   values (the label is the parsing rule basically). In the future a label
   syntax can be developed to specify initial values and bounds in the template
   file to make the scripts less case-specific.
-
 - Vector inputs and outputs require different strategies, these files have
   simpler formating, most of them can be treated as tables, one specifies row,
   column, separator(?) and header rows (to skip). For very special cases an
   entire user-defined method can be used.
+Small issue with vector inputs:
+  If an evaluation has multiple config files we try to write all variables to
+  all files, but the table writer currently trows an exception if the target is
+  not a table.
+So either:
+  - mark the config files as tables,
+  - or try catch variables writes and issue a warning the first time,
+  - or if the file is clearly not compatible with the data, just ignore,
+  The 1st option would require logic to determine type of parser... not great.
+  3rd option is the simplest.
 
 # Parallel execution
 This refers to the simultaneous evaluation of functions and their gradients,

@@ -62,14 +62,20 @@ class Function:
 
     def getValue(self):
         # check if we can retrive the value
-        if not self._funEval[-1].isRun():
-            self._sequentialEval(self._funEval)
+        for evl in self._funEval:
+            if not evl.isRun():
+                self._sequentialEval(self._funEval)
+                break
+        #end
         return self._outParser.read(self._outFile)
 
     def getGradient(self,mask=None):
         # check if we can retrive the gradient
-        if not self._gradEval[-1].isRun():
-            self._sequentialEval(self._gradEval)
+        for evl in self._gradEval:
+            if not evl.isRun():
+                self._sequentialEval(self._gradEval)
+                break
+        #end
 
         # determine size of gradient vector
         size = 0

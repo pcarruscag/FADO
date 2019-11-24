@@ -148,7 +148,7 @@ class DriverBase:
 
         # map the start index of each variable in the design vector
         idx = [0]
-        for var in self._variables[1:]:
+        for var in self._variables[0:-1]:
             idx.append(idx[-1]+var.getSize())
         self._variableStartMask = dict(zip(self._variables,idx))
 

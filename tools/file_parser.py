@@ -97,3 +97,69 @@ class TableReader:
     #end
 #end
 
+
+# Write to a table-like file
+class TableWriter:
+    def __init__(self,delim="  ",start=(0,0),end=(None,None),delimChars=""):
+        self._end = end
+        self._start = start
+        self._delim = delim
+        self._delimChars = delimChars
+
+    def write(self,file,values):
+        # load file
+        fid = open(file,"r")
+        lines = fid.readlines()
+        fid.close()
+
+        # check if the values are remotely compatible with the file
+        if len(lines) < values.shape[0]: return # "soft fail"
+
+        # keep top, bottom, left, and right the same
+        newLines = lines[0:self._start[0]]
+        footerLines = []
+        if self._end[0] is not None: footerLines = lines[self._end[0]:]
+
+        # skip header and footer rows
+        lines = lines[self._start[0]:self._end[0]]
+        if lines[-1].strip() is "": lines = lines[0:-1]
+
+        if len(lines) != values.shape[0]:
+            raise RuntimeError("Data and file have different number of rows.")
+        numCol = values.size/values.shape[0]
+
+        # process lines
+        for (line,row) in zip(lines,values):
+            for char in self._delimChars:
+                line = line.replace(char," ")
+
+            tmp = line.strip().split()
+
+            if numCol != len(tmp[self._start[1]:self._end[1]]):
+                raise RuntimeError("Data and file have different number of columns.")
+            #end
+
+            # reconstruct left and right parts
+            newLine = ""
+            for string in tmp[0:self._start[1]]:
+                newLine += string+self._delim
+
+            # handle case where row is not iterable
+            if values.ndim==1: row=[row]
+
+            for val in row:
+                newLine += str(val)+self._delim
+
+            if self._end[1] is not None:
+                for string in tmp[self._end[1]:]:
+                    newLine += string+self._delim
+
+            newLines.append(newLine.strip()+"\n")
+        #end
+
+        # write file
+        fid = open(file,"w")
+        fid.writelines(newLines+footerLines)
+        fid.close()
+    #end
+#end

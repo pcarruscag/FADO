@@ -114,15 +114,21 @@ class Parameter:
     # inc/dec-menting returns true at the bounds
     def increment(self):
         self._index = max(0,min(self._upper,self._index+1))
-        return (self._index == self._upper)
+        return self.isAtTop()
 
     def decrement(self):
         self._index = max(0,min(self._upper,self._index-1))
-        return (self._index == 0)
+        return self.isAtBottom()
 
     def writeToFile(self,file):
         value = self._values[self._index]
         if self._function != None:
             value = self._function(value)
         self._parser.write(file,value)
+
+    def isAtTop(self):
+        return (self._index == self._upper)
+
+    def isAtBottom(self):
+        return (self._index == 0)
 #end
