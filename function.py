@@ -15,4 +15,25 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with FADO.  If not, see <https://www.gnu.org/licenses/>.
 
+import variable as var
 
+
+# Class to define functions
+class Function:
+    def __init__(self,outVar,valEval,gradEval):
+        self._outVar = outVar
+        self._valEval = valEval
+        self._gradEval = gradEval
+
+    def evalValue(self):
+        pass
+
+    def evalGradient(self):
+        pass
+
+    def value(self):
+        return self._outVar.getVal()
+
+    def gradient(self):
+        return self._outVar.getGrad()
+#end

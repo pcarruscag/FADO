@@ -67,6 +67,9 @@ class InputVariable:
         self._x = copy.deepcopy(self._x0)
     #end
 
+    def getSize(self):
+        return self._size
+
     def getInitial(self):
         return self._x0
 
@@ -89,37 +92,44 @@ class InputVariable:
 
 # Class for parameters
 class Parameter:
-    def __init__(self):
-        pass
+    # values is an indexable structure (e.g. range, list)
+    # function can be used to further convert the current value
+    def __init__(self,values,parser,start=0,function=None):
+        self._values = values
+        self._parser = parser
+        self._function = function
+        # make sure starting possition is valid
+        self._upper = len(values)-1
+        self._index = max(0,min(self._upper,start))
 
+    # inc/dec-menting returns true at the bounds
     def increment(self):
-        pass
+        self._index = max(0,min(self._upper,self._index+1))
+        return (self._index == self._upper)
 
     def decrement(self):
-        pass
+        self._index = max(0,min(self._upper,self._index-1))
+        return (self._index == 0)
 
     def writeToFile(self,file):
-        self._parser.write(file,self._x)
+        value = self._values[self._index]
+        if function != None:
+            value = self._function(value)
+        self._parser.write(file,value)
 #end
 
 
 # Class for output variables
 class OutputVariable:
-    def __init__(self):
-        pass
+    def __init__(self,valFile,valParser,gradFile,gradParser):
+        self._valFile = valFile
+        self._valParser = valParser
+        self._gradFile = gradFile
+        self._gradParser = gradParser
 
+    def getVal(self):
+        return self._valParser(self._valFile)
+
+    def getGrad(self):
+        return self._gradParser(self._gradFile)
 #end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
