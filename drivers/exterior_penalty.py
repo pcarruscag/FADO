@@ -60,6 +60,7 @@ class ExteriorPenaltyDriver(DriverBase):
         self._dirPrefix = "DSN_"
         self._keepDesigns = True
         self._isFeasible = False
+        self._logRowFormat = ""
 
         # variables for parallelization of evaluations
         self._parallelEval = False
@@ -85,8 +86,96 @@ class ExteriorPenaltyDriver(DriverBase):
 
         self._grad = np.zeros((self.getNumVariables(),))
 
+        # write the header for the log file and set the format
+        if self._logObj is not None:
+            w = self._logColWidth
+            headerData = ["FUN EVAL","FUN TIME","GRAD EVAL","GRAD TIME","FEASIBLE"]
+            self._logRowFormat = "{:>W}"+"{:>W.3e}{:>W}"*2
+            for obj in self._objectives:
+                headerData.append(obj.function.getName(w-1))
+                self._logRowFormat += "{:>W.Pg}"
+            for obj in self._constraintsEQ:
+                headerData.append(obj.function.getName(w-1))
+                headerData.append("PEN COEFF")
+                self._logRowFormat += "{:>W.Pg}"*2
+            for obj in self._constraintsLT:
+                headerData.append(obj.function.getName(w-1))
+                headerData.append("PEN COEFF")
+                self._logRowFormat += "{:>W.Pg}"*2
+            for obj in self._constraintsGT:
+                headerData.append(obj.function.getName(w-1))
+                headerData.append("PEN COEFF")
+                self._logRowFormat += "{:>W.Pg}"*2
+            for obj in self._constraintsIN:
+                headerData.append(obj.function.getName(w-1))
+                headerData.append("PEN COEFF")
+                self._logRowFormat += "{:>W.Pg}"*2
+            # right-align, set width in format and a precision that fits it
+            self._logRowFormat = self._logRowFormat.replace("W",str(w))+"\n"
+            self._logRowFormat = self._logRowFormat.replace("P",str(min(8,w-7)))
+            header = ""
+            for data in headerData:
+                header += data.rjust(w)
+            self._logObj.write(header+"\n")
+        #end
+
+        # write the header for the history file
+        if self._hisObj is not None:
+            header = "ITER"+self._hisDelim
+            for obj in self._objectives:
+                header += obj.function.getName()+self._hisDelim
+            for obj in self._constraintsEQ:
+                header += obj.function.getName()+self._hisDelim
+            for obj in self._constraintsLT:
+                header += obj.function.getName()+self._hisDelim
+            for obj in self._constraintsGT:
+                header += obj.function.getName()+self._hisDelim
+            for obj in self._constraintsIN:
+                header += obj.function.getName()+self._hisDelim
+            header = header.strip(self._hisDelim)+"\n"
+            self._hisObj.write(header)
+        #end
+
         self._isInit = True
     #end
+
+    def _writeHisLine(self):
+        if self._hisObj is None: return
+        hisLine = str(self._funEval)+self._hisDelim
+        for val in self._ofval:
+            hisLine += str(val)+self._hisDelim
+        for val in self._eqval:
+            hisLine += str(val)+self._hisDelim
+        for val in self._ltval:
+            hisLine += str(val)+self._hisDelim
+        for val in self._gtval:
+            hisLine += str(val)+self._hisDelim
+        for val in self._inval:
+            hisLine += str(val)+self._hisDelim
+        hisLine = hisLine.strip(self._hisDelim)+"\n"
+        self._hisObj.write(hisLine)
+    #end
+
+    def _writeLogLine(self):
+        if self._logObj is None: return
+        data = [self._funEval, self._funTime, self._jacEval, self._jacTime]
+        data.append(("NO","YES")[self._isFeasible])
+        for f in self._ofval:
+            data.append(f)
+        for (g,r) in zip(self._eqval,self._eqpen):
+            data.append(g)
+            data.append(r)
+        for (g,r) in zip(self._ltval,self._ltpen):
+            data.append(g)
+            data.append(r)
+        for (g,r) in zip(self._gtval,self._gtpen):
+            data.append(g)
+            data.append(r)
+        for (g,r) in zip(self._inval,self._inpen):
+            data.append(g)
+            data.append(r)
+        self._logObj.write(self._logRowFormat.format(*data))
+    #end        
 
     def fun(self,x):
         self._initialize()
@@ -130,6 +219,9 @@ class ExteriorPenaltyDriver(DriverBase):
             self._inval[i] = self._constraintsIN[i].function.getValue()
         
         self._funTime += time.time()
+
+        # monitor convergence
+        self._writeHisLine()
 
         # shift constraints and scale as required
         for i in range(self._ofval.size):
@@ -248,6 +340,9 @@ class ExteriorPenaltyDriver(DriverBase):
         if not paramsIfFeasible or self._isFeasible:
             for par in self._parameters:
                 par.increment()
+
+        # log update
+        self._writeLogLine()
     #end
 
     def feasibleDesign(self):

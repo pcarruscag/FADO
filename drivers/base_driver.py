@@ -62,6 +62,10 @@ class DriverBase:
         self._variableStartMask = None
         self._userDir = ""
         self._workDir = "__WORKDIR__"
+        self._logObj = None
+        self._logColWidth = 13
+        self._hisObj = None
+        self._hisDelim = ",  "
     #end
 
     def addObjective(self,type,function,scale=1.0,weight=1.0):
@@ -87,6 +91,14 @@ class DriverBase:
         N=0
         for var in self._variables: N+=var.getSize()
         return N
+
+    def setLogger(self,obj,width=13):
+        self._logObj = obj
+        self._logColWidth = width
+
+    def setHistorian(self,obj,delim=",  "):
+        self._hisObj = obj
+        self._hisDelim = delim
 
     # methods to retrieve information in a format that the optimizer understands
     def _getConcatenatedVector(self,getterName):

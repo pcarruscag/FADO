@@ -34,6 +34,12 @@ class Function:
         self._gradFiles = []
         self._gradParse = []
 
+    def getName(self,maxLen=0):
+        name = self._name
+        if maxLen==0: return name
+        if maxLen<len(name): name = name[:maxLen]
+        return name
+
     def addInputVariable(self,variable,gradFile,gradParser):
         self._variables.append(variable)
         self._gradFiles.append(gradFile)

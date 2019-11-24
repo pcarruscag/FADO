@@ -234,4 +234,11 @@ The flags can be reset by the driver at the end of all evaluations in "fun" and
 used to simply retrieve the values.
 This should be fine... It seems to be the assumption that most optimizers make.
 
+# Monitoring
+We will have a log and an history object (not file) the driver builds the lines
+it wants to log/display and calls the "write" method on the object, this allows
+custom objects to be attached to the driver which may print and/or write to
+file or possibly even plot.
+The "logger" monitors events like the updates of the exterior penalty method,
+the "historian" registers convergence history.
 
