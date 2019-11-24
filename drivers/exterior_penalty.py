@@ -25,7 +25,7 @@ from drivers.base_driver import DriverBase
 # Exterior Penalty method wrapper
 class ExteriorPenaltyDriver(DriverBase):
     def __init__(self, tol, freq=40, rini=8, rmax=1024, factorUp=4, factorDown=0.5):
-        super(ExteriorPenaltyDriver,self).__init__()
+        DriverBase.__init__(self)
         
         # parameters of the method
         self._tol = tol
