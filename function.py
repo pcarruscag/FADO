@@ -15,25 +15,56 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with FADO.  If not, see <https://www.gnu.org/licenses/>.
 
-import variable as var
-
+import numpy as np
 
 # Class to define functions
 class Function:
-    def __init__(self,outVar,valEval,gradEval):
-        self._outVar = outVar
-        self._valEval = valEval
-        self._gradEval = gradEval
+    def __init__(self,name="",outFile="",outParser=None):
+        self._name = name
 
-    def evalValue(self):
-        pass
+        # where and how the output value is obtained
+        self.setOutput(outFile,outParser)
+        
+        # evaluation pipelines for value and gradient
+        self._funEval = []
+        self._gradEval = []
 
-    def evalGradient(self):
-        pass
+        # define inputs, where and how their gradients are obtained
+        self._variables = []
+        self._gradFiles = []
+        self._gradParse = []
 
-    def value(self):
-        return self._outVar.getVal()
+    def addInputVariable(self,variable,gradFile,gradParser):
+        self._variables.append(variable)
+        self._gradFiles.append(gradFile)
+        self._gradParse.append(gradParser)
 
-    def gradient(self):
-        return self._outVar.getGrad()
+    def setOutput(self,file,parser):
+        self._outFile = file
+        self._outParser = parser
+
+    def getValue(self):
+        return self._outParser.read(self._outFile)
+
+    def getGradient(self):
+        size = 0
+        for var in self._variables:
+            size += var.getSize()
+
+        gradient = np.ndarray((size,))
+        idx = 0
+        for file,parser in zip(self._gradFiles,self._gradParse):
+            grad = parser.read(file)
+            try:
+                for val in grad:
+                    gradient[idx] = val
+                    idx += 1
+            except:
+                gradient[idx] = grad
+                idx += 1
+            #end
+        #end
+        
+        return gradient
+    #end
 #end

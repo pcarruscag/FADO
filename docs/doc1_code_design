@@ -91,6 +91,21 @@ EVALUATION has:
   - run instructions
 Evaluation methods can be shared by functions and they should be lazy, i.e.
 run only as needed.
+Evaluations need to be chained to create pre/post processing steps like
+deforming the grid. This may be achieved by adding a sequence of evaluations to
+the function, without any explicit link other than the order.
+What should constitute a run and what happens during it?
+  - working directory (sub directory inside 
+  - the input files above
+  - output files? as they may be required for other operations of the pipeline,
+    this may be done explicitly by the user 
+The directory is created, the input files are moved into it (symbolic links are
+more efficient but maybe not compatible with windows?), the Popen object is
+created. (the evaluation parameters are written as the files are copied)
+At this stage the config files can be updated by the function before the run.
+(note: at some point it may make sense to reuse directories, update only config
+       and make use of generated data without moving)
+
 
 # File parsing methods
 - Scalar input variables and parameters are parsed with the template and label
@@ -138,8 +153,6 @@ function.
 driver.fun is called with a numpy array as input
   1 - The values in the numpy array are transferred to the Variable objects,
       the values can now be written to file via the method in variable.
-
-
 
 
 
