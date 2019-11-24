@@ -50,3 +50,13 @@ class BoundConstraints:
     #end
 #end
 
+
+# Scale gradient without scaling variables
+class GradientScale:
+    def __init__(self,grad,scale):
+        self._grad = grad
+        self._scale = scale
+
+    def grad(self,x):
+        return self._grad(x)*self._scale
+#end
