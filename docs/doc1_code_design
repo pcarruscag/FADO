@@ -72,6 +72,7 @@ It exposes methods to:
 OUTPUT_VARIABLE:
   - value and gradient source files
   - parsing rules (maybe even a whole method)
+(one output, one set of files, specified at construction)
 
 INPUT_VARIABLE has:
   - initial value
@@ -110,6 +111,18 @@ An evaluation schedule needs to be created at the level of the evaluation
 methods (not the function as those may share evaluations).
 The optimization methods separate functions and gradient evaluation so that
 dependency need not be established?
+It is the derived driver that needs to create the schedule as some optimization
+methods do not call for evaluation of all functions in one iteration.
+
+# Data/control flow
+What happens when the optimizer requests the driver to evaluate the objective
+function.
+
+driver.fun is called with a numpy array as input
+  1 - The values in the numpy array are transferred to the Variable objects,
+      the values can now be written to file via the method in variable.
+
+
 
 
 
