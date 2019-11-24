@@ -43,6 +43,16 @@ def fletcherReeves(fun,x,grad,options,lineSearch=goldenSection):
             return self._fun(self._x+lbd*self._d)
     #end
 
+    if verbose:
+        headerLine = ""
+        for data in ["ITER","FUN EVAL","LS EVAL","STEP","FUN EPS","GRAD EPS","FUN VAL"]:
+            headerLine += data.rjust(13)
+        logFormat = "{:>13}"*3+"{:>13.6g}"*4
+        print("\n"+"*"*33+" Fletcher-Reeves Method "+"*"*34+"\n")
+        print("Number of variables: "+str(x.size)+"    Restart period: "+str(restart)+"\n")
+        print(headerLine)
+    #end
+
     # initialize
     feval = 1
     jeval = 1
@@ -51,20 +61,16 @@ def fletcherReeves(fun,x,grad,options,lineSearch=goldenSection):
     G = grad(x)
     success = False
 
-    if verbose:
-        headerLine = ""
-        for data in ["ITER","FUN EVAL","LS EVAL","STEP","FUN EPS","GRAD EPS","FUN VAL"]:
-            headerLine += data.rjust(13)
-        logFormat = "{:>13}"*3+"{:>13.6g}"*4
-        print("")
-    #end
+    # log
+    logData = [0, 1, 0, 0.0, 0.0, 0.0, f]
+    if verbose: print(logFormat.format(*logData))
 
     # start
     for i in range(maxiter):
         # periodic restart
         if i%restart==0 : S=-G
 
-        if verbose and i%10==0 : print(headerLine)
+        if verbose and i%10==0 and i>0: print(headerLine)
         
         # line search
         f_old = f
@@ -73,16 +79,19 @@ def fletcherReeves(fun,x,grad,options,lineSearch=goldenSection):
 
         # detect bad direction and restart
         if f>f_old:
-            if verbose: print("Bad search direction, taking steepest descent.")
-            f = f_old
-            S = -G
-            (lbd,f,nls2) = lineSearch(lsfun(fun,x,S),maxls,f,lbd,tolls)
-            nls += nls2
-            feval += nls
+            if i%restart!=0: # otherwise we already have S=-G
+                if verbose: print("Bad search direction, taking steepest descent.")
+                f = f_old
+                S = -G
+                (lbd,f,nls2) = lineSearch(lsfun(fun,x,S),maxls,f,lbd,tolls)
+                nls += nls2
+                feval += nls
+            #end
             if f>f_old:
                 f = f_old
-                if verbose: print("Could not improve design further.")
+                if verbose: print("Could not improve along steepest descent direction.")
                 break
+            #end
         #end
 
         # update search direction
