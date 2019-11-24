@@ -361,8 +361,9 @@ class ExteriorPenaltyDriver(DriverBase):
     def feasibleDesign(self):
         return self._isFeasible
 
-    def setStorageMode(self,keepDesigns=False):
+    def setStorageMode(self,keepDesigns=False,dirPrefix="DSN_"):
         self._keepDesigns = keepDesigns
+        self._dirPrefix = dirPrefix
 
     def setUserPreProcessFun(self,command):
         self._userPreProcessFun = command
