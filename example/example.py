@@ -12,9 +12,10 @@
 #
 # The variables (x,y) go in the config the constants go in the data.
 
-import sys
-sys.path.append("../")
-sys.path.append("../../")
+# You "shouldn't" do this... but if nothing else works...
+#import sys
+#sys.path.append("../")
+#sys.path.append("../../")
 
 from FADO import *
 

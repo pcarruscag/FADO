@@ -1,9 +1,5 @@
 # Shape and Topology optimization with 2 load cases
 
-import sys
-sys.path.append("../")
-sys.path.append("../../")
-
 from FADO import *
 import scipy.optimize
 import os

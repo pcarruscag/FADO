@@ -1,9 +1,5 @@
 # Plain topology optimization example
 
-import sys
-sys.path.append("../")
-sys.path.append("../../")
-
 from FADO import *
 import scipy.optimize
 import subprocess

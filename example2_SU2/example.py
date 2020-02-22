@@ -1,9 +1,5 @@
 # Plain topology optimization example using the Fletcher-Reeves method
 
-import sys
-sys.path.append("../")
-sys.path.append("../../")
-
 from FADO import *
 import subprocess
 subprocess.call("cp ../example1_SU2/data.zip . && unzip -o data.zip",shell=True)
