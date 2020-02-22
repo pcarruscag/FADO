@@ -91,6 +91,22 @@ class InputVariable:
     def getScale(self):
         return self._scale
 
+    def get(self,name):
+        if name is "Initial":
+            return self.getInitial()
+        elif name is "Current":
+            return self.getCurrent()
+        elif name is "LowerBound":
+            return self.getLowerBound()
+        elif name is "UpperBound":
+            return self.getUpperBound()
+        elif name is "Scale":
+            return self.getScale()
+        else:
+            raise KeyError("Variable does not have field: `"+name+"`")
+        #end
+    #end
+
     def setCurrent(self,x):
         for i in range(x.size): self._x[i] = x[i]
 

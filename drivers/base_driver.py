@@ -101,11 +101,11 @@ class DriverBase:
         self._hisDelim = delim
 
     # methods to retrieve information in a format that the optimizer understands
-    def _getConcatenatedVector(self,getterName):
+    def _getConcatenatedVector(self,name):
         x = np.ndarray((self.getNumVariables(),))
         idx = 0
         for var in self._variables:
-            for val in getattr(var,getterName)():
+            for val in var.get(name):
                 x[idx] = val
                 idx += 1
             #end
@@ -114,13 +114,13 @@ class DriverBase:
     #end
 
     def getInitial(self):
-        return self._getConcatenatedVector("getInitial")*self._varScales
+        return self._getConcatenatedVector("Initial")*self._varScales
 
     def getLowerBound(self):
-        return self._getConcatenatedVector("getLowerBound")*self._varScales
+        return self._getConcatenatedVector("LowerBound")*self._varScales
 
     def getUpperBound(self):
-        return self._getConcatenatedVector("getUpperBound")*self._varScales
+        return self._getConcatenatedVector("UpperBound")*self._varScales
 
     # update design variables with the design vector from the optimizer
     def _setCurrent(self,x):
@@ -164,7 +164,7 @@ class DriverBase:
             idx.append(idx[-1]+var.getSize())
         self._variableStartMask = dict(zip(self._variables,idx))
 
-        self._varScales = self._getConcatenatedVector("getScale")
+        self._varScales = self._getConcatenatedVector("Scale")
 
         # store the absolute current path
         self._userDir = os.path.abspath(os.curdir)
