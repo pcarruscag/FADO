@@ -141,8 +141,8 @@ vol_frac.addInputVariable(rho,"VOLUME/grad.dat",TableReader(None,0))
 vol_frac.addValueEvalStep(deform)
 vol_frac.addValueEvalStep(volume)
 
-vol_total = Function("vol_total","GEOMETRY/of_func.dat",TableReader(0,0,(3,0),(None,None),","))
-vol_total.addInputVariable(ffd,"GEOMETRY/of_grad.dat",TableReader(None,1,(3,0),(None,None),","))
+vol_total = Function("vol_total","GEOMETRY/of_func.csv",TableReader(0,0,(1,0),(None,None),","))
+vol_total.addInputVariable(ffd,"GEOMETRY/of_grad.csv",TableReader(None,1,(1,0),(None,None),","))
 vol_total.addValueEvalStep(deform)
 vol_total.addValueEvalStep(geometry)
 
@@ -155,7 +155,7 @@ driver.addUpperBound(vol_total,4800,2e-4)
 
 driver.setWorkingDirectory("currentDesign")
 driver.preprocessVariables()
-driver.setEvaluationMode(True,1.0)
+driver.setEvaluationMode(True,0.1)
 driver.setStorageMode(False)
 
 log = open("log.txt","w",1)
