@@ -34,4 +34,18 @@ end of an outer iteration, which is not enough to manage runs.
   It seems new evaluations will have to be detected based on a change of design
   variables... not ideal but should be generic for other optimizers.
 
+### Design ###
+
+Setup object with functions, call to solve is responsability of the user.
+This should make it easier to manage warm starts and set additional options.
+
+For simplicity all functions are evaluated if either f or g are requested
+(same for gradients), during normal operation Ipopt allways requires the
+values of f and g anyway.
+
+To trigger evaluations the driver keeps a copy of the design vector and checks
+if any variable changed.
+
+We make the (adjoint) assumption that gradients require functions to be
+computed first.
 
