@@ -54,18 +54,35 @@ class DriverBase:
         self._variables = []
         self._varScales = None
         self._parameters = []
+
+        # functions by role
         self._objectives = []
         self._constraintsEQ = []
         self._constraintsLT = []
         self._constraintsGT = []
         self._constraintsIN = []
+
+        # function values
+        self._ofval = None
+        self._eqval = None
+        self._ltval = None
+        self._gtval = None
+        self._inval = None
+
+        # map the start index of each variable in the design vector
         self._variableStartMask = None
+
         self._userDir = ""
         self._workDir = "__WORKDIR__"
+        self._dirPrefix = "DSN_"
+        self._keepDesigns = True
         self._logObj = None
         self._logColWidth = 13
         self._hisObj = None
         self._hisDelim = ",  "
+
+        self._userPreProcessFun = ""
+        self._userPreProcessGrad = ""
     #end
 
     def addObjective(self,type,function,scale=1.0,weight=1.0):
@@ -169,6 +186,16 @@ class DriverBase:
         # store the absolute current path
         self._userDir = os.path.abspath(os.curdir)
     #end
+
+    def setStorageMode(self,keepDesigns=False,dirPrefix="DSN_"):
+        self._keepDesigns = keepDesigns
+        self._dirPrefix = dirPrefix
+
+    def setUserPreProcessFun(self,command):
+        self._userPreProcessFun = command
+
+    def setUserPreProcessGrad(self,command):
+        self._userPreProcessGrad = command
 
     def _resetAllValueEvaluations(self):
         for obj in self._objectives:

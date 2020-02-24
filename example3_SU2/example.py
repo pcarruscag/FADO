@@ -58,7 +58,7 @@ geometry.addParameter(filter_radius)
 geometry.addParameter(beta)
 
 # horizontal load case
-hload_dir = ExternalRun("HLOAD","SU2_CFD settings.cfg",True)
+hload_dir = ExternalRun("HLOAD","SU2_CFD -t 2 settings.cfg",True)
 hload_dir.addConfig("settings.cfg")
 hload_dir.addConfig("element_properties.dat")
 hload_dir.addData("DEFORM/mesh_def.su2")
@@ -68,7 +68,7 @@ hload_dir.addParameter(filter_radius)
 hload_dir.addParameter(beta)
 
 # vertical load case
-vload_dir = ExternalRun("VLOAD","SU2_CFD settings.cfg",True)
+vload_dir = ExternalRun("VLOAD","SU2_CFD -t 2 settings.cfg",True)
 vload_dir.addConfig("settings.cfg")
 vload_dir.addConfig("element_properties.dat")
 vload_dir.addData("DEFORM/mesh_def.su2")
@@ -156,7 +156,7 @@ driver.addUpperBound(vol_total,4800,2e-4)
 driver.setWorkingDirectory("currentDesign")
 driver.preprocessVariables()
 driver.setEvaluationMode(True,0.1)
-driver.setStorageMode(False)
+driver.setStorageMode(True)
 
 log = open("log.txt","w",1)
 his = open("history.txt","w",1)
@@ -168,7 +168,7 @@ x  = driver.getInitial()
 lb = driver.getLowerBound()
 ub = driver.getUpperBound()
 bounds = np.array((lb,ub),float).transpose()
-update_iters = 17
+update_iters = 18
 max_iters = 1000
 fin_tol = 1e-7
 
