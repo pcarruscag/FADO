@@ -2,7 +2,7 @@
 
 from FADO import *
 import subprocess
-subprocess.call("cp ../example1_SU2/data.zip . && unzip -o data.zip",shell=True)
+subprocess.call("unzip -o ../example1_SU2/data.zip",shell=True)
 
 # Design variables
 rho = InputVariable(0.5,TableWriter("  ",(1,-1)),1600,1.0,0.0,1.0)
