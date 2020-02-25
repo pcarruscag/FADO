@@ -1,2 +1,3 @@
 from drivers.exterior_penalty import *
-from drivers.ipopt_driver import *
+try: from drivers.ipopt_driver import *
+except: pass

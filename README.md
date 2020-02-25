@@ -25,6 +25,8 @@ From the top down (and not a replacement for the docs):
 - **Evaluation**: These wrap the calls to the external codes, they are configured with the input and data files, and the instructions, required to execute the code. "Parameters" can be associated with evaluations to introduce small changes to the input files (e.g. change a boundary condition in a multipoint optimization).
 - **Parameter**: A numeric or text variable that is not exposed to the optimizer, they are useful to introduce small modifications to the input files to make a small number of template input files applicable to as many evaluations as possible.
 
+**Note**: The calls to external codes from "Evaluations" are made with `subprocess.call(..., shell=True)`, don't run optimizations as root, or in system directories, etc.
+
 ## Interfacing with files
 Function, Variable, and Parameter need ways to be written and read to or from files.
 Any object implementing write(values,file) or read(file) can be used, four classes are provided that should cover most scenarios:
@@ -36,9 +38,13 @@ Any object implementing write(values,file) or read(file) can be used, four class
 ## Installation
 Make the parent directory ("../") and FADO's ("./") reachable to Python, usually via PYTHONPATH, `from FADO import *` should then work (provided the name of the directory was not changed).
 
+## Dependencies
+Hard dependency on NumPy, ndarrays are used throughout the code.
+The ExteriorPenaltyDriver was designed around the SciPy.optimize interface, but a simple implementation of the Fletcher-Reeves method is available (see example2_SU2).
+To use the IpoptDriver you need [IPyOpt](https://github.com/g-braeunlich/IPyOpt) and [Ipopt](https://github.com/coin-or/Ipopt), the latter can be installed with apt-get.
+
 ## Usage
-Have a look at the examples, example1 is a contrived example using the Rosenbrock function, the others are realistic uses of [SU2](https://su2code.github.io/).
-Calls to external codes are made with `subprocess.call(..., shell=True)`, don't run optimizations as root :)
+Have a look at the examples, "example" is a contrived example using the Rosenbrock function, the others are realistic uses of [SU2](https://su2code.github.io/).
 
 ## License
 [LGPL-3.0](https://www.gnu.org/licenses/lgpl-3.0.html)
