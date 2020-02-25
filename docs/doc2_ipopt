@@ -49,3 +49,8 @@ if any variable changed.
 We make the (adjoint) assumption that gradients require functions to be
 computed first.
 
+### TODO ###
+
+Ipopt backtracks when evaluating a function fails, in the C++ interfacer this
+is signalled by returning false, need to check how to do that in IPyOpt.
+

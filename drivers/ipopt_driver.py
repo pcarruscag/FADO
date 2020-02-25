@@ -29,11 +29,15 @@ class IpoptDriver(ParallelEvalDriver):
     def __init__(self):
         ParallelEvalDriver.__init__(self)
 
-        # timers, counters, flags
+        # counters, flags
         self._funEval = 0
         self._jacEval = 0
         self._funReady = False
         self._jacReady = False
+
+        # sizes
+        self._nVar = 0
+        self._nCon = 0
 
         # current value of the variables
         self._x = None
@@ -45,7 +49,7 @@ class IpoptDriver(ParallelEvalDriver):
         self._nlp = None
     #end
 
-    # update the problem parameters, triggers new evaluations
+    # Update the problem parameters (triggers new evaluations).
     def update(self):
         for par in self._parameters: par.increment()
 
@@ -54,11 +58,14 @@ class IpoptDriver(ParallelEvalDriver):
         self._jacReady = False
         self._resetAllValueEvaluations()
         self._resetAllGradientEvaluations()
+
+        if self._hisObj is not None:
+            self._hisObj.write("Parameter update.\n")
     #end
 
     # Prepares and returns the optimization problem for Ipopt.
-    # For convenience also does other preprocessing,
-    # all functions must be set before calling this method.
+    # For convenience also does other preprocessing, all functions must be set before calling this method.
+    # Do not destroy the driver after obtaining the problem.
     def getNLP(self):
         self.preprocessVariables()
 
@@ -86,15 +93,15 @@ class IpoptDriver(ParallelEvalDriver):
         #end
 
         # initialize current values such that evaluations are triggered on first call
-        nVar = self.getNumVariables()
-        self._x = np.ones([nVar,])*1e20
+        self._nVar = self.getNumVariables()
+        self._x = np.ones([self._nVar,])*1e20
 
-        # prepare constraint information
-        nCon = len(self._constraintsEQ) + len(self._constraintsLT) +\
-               len(self._constraintsGT) + len(self._constraintsIN)
+        # prepare constraint information, the bounds are based on the shifting and scaling
+        self._nCon = len(self._constraintsEQ) + len(self._constraintsLT) +\
+                     len(self._constraintsGT) + len(self._constraintsIN)
 
-        conLowerBound = np.zeros([nCon,])
-        conUpperBound = np.zeros([nCon,])
+        conLowerBound = np.zeros([self._nCon,])
+        conUpperBound = np.zeros([self._nCon,])
 
         i = len(self._constraintsEQ)
         conLowerBound[i:(i+len(self._constraintsLT))] = -1e20
@@ -105,17 +112,19 @@ class IpoptDriver(ParallelEvalDriver):
         i += len(self._constraintsGT)
         conUpperBound[i:(i+len(self._constraintsIN))] = 1.0
 
-        # assume row major storage for sparsity
-        self._sparseIndices = (np.array([i // nVar for i in range(nCon*nVar)], dtype=int),
-                               np.array([i % nVar for i in range(nCon*nVar)], dtype=int))
+        # assume row major storage for gradient sparsity
+        rg = range(self._nVar * self._nCon)
+        self._sparseIndices = (np.array([i // self._nVar for i in rg], dtype=int),
+                               np.array([i % self._nVar for i in rg], dtype=int))
 
         # create the optimization problem
-        self._nlp = opt.Problem(nVar, self.getLowerBound(), self.getUpperBound(),
-                                nCon, conLowerBound, conUpperBound, self._sparseIndices, 0,
+        self._nlp = opt.Problem(self._nVar, self.getLowerBound(), self.getUpperBound(),
+                                self._nCon, conLowerBound, conUpperBound, self._sparseIndices, 0,
                                 self._eval_f, self._eval_grad_f, self._eval_g, self._eval_jac_g)
         return self._nlp
     #end
 
+    # Writes a line to the history file.
     def _writeHisLine(self):
         if self._hisObj is None: return
         hisLine = str(self._funEval)+self._hisDelim
@@ -135,6 +144,8 @@ class IpoptDriver(ParallelEvalDriver):
 
     # Detect a change in the design vector, reset directories and evaluation state.
     def _handleVariableChange(self,x):
+        assert x.size == self._nVar, "Wrong size of design vector."
+
         newValues = (abs(self._x-x) > np.finfo(float).eps).any()
 
         if not newValues: return False
@@ -167,6 +178,8 @@ class IpoptDriver(ParallelEvalDriver):
         return True
     #end
 
+    # Method passed to Ipopt to get the objective value,
+    # evaluates all functions if necessary.
     def _eval_f(self,x):
         if self._handleVariableChange(x):
             self._evaluateFunctions()
@@ -175,7 +188,11 @@ class IpoptDriver(ParallelEvalDriver):
         return self._ofval.sum()
     #end
 
+    # Method passed to Ipopt to get the objective gradient, evaluates gradients and
+    # functions if necessary, otherwise it simply combines and scales the results.
     def _eval_grad_f(self, x, out):
+        assert out.size >= self._nVar, "Wrong size of gradient vector (\"out\")."
+
         if self._handleVariableChange(x):
             self._evaluateGradients()
         #end
@@ -194,7 +211,10 @@ class IpoptDriver(ParallelEvalDriver):
         return out
     #end
 
+    # Method passed to Ipopt to expose the constraint vector, see also "_eval_f"
     def _eval_g(self, x, out):
+        assert out.size >= self._nCon, "Wrong size of constraint vector (\"out\")."
+
         if self._handleVariableChange(x):
             self._evaluateFunctions()
         #end
@@ -214,7 +234,10 @@ class IpoptDriver(ParallelEvalDriver):
         return out
     #end
 
+    # Method passed to Ipopt to expose the constraint Jacobian, see also "_eval_grad_f".
     def _eval_jac_g(self, x, out):
+        assert out.size >= self._nCon*self._nVar, "Wrong size of constraint Jacobian vector (\"out\")."
+
         if self._handleVariableChange(x):
             self._evaluateGradients()
         #end
@@ -223,14 +246,13 @@ class IpoptDriver(ParallelEvalDriver):
         os.chdir(self._workDir)
 
         i = 0
-        nVar = self.getNumVariables()
         mask = self._variableStartMask
 
         for conType in [self._constraintsEQ, self._constraintsLT,\
                         self._constraintsGT, self._constraintsIN]:
             for con in conType:
-                out[i:(i+nVar)] = con.function.getGradient(mask) * con.scale / self._varScales
-                i += nVar
+                out[i:(i+self._nVar)] = con.function.getGradient(mask) * con.scale / self._varScales
+                i += self._nVar
             #end
         #end
 
@@ -240,6 +262,8 @@ class IpoptDriver(ParallelEvalDriver):
         return out
     #end
 
+    # Evaluate all functions (objectives and constraints), imediately
+    # retrieves and stores the results after shifting and scaling.
     def _evaluateFunctions(self):
         # lazy evaluation
         if self._funReady: return
@@ -302,6 +326,9 @@ class IpoptDriver(ParallelEvalDriver):
         self._funReady = True
     #end
 
+    # Evaluates all gradients in parallel execution mode, otherwise
+    # it only runs the user preprocessing and the execution takes place
+    # when the results are read in "_eval_grad_f" or in "_eval_jac_g".
     def _evaluateGradients(self):
         # lazy evaluation
         if self._jacReady: return
@@ -325,4 +352,3 @@ class IpoptDriver(ParallelEvalDriver):
         self._jacEval += 1
         self._jacReady = True
     #end
-
