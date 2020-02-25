@@ -85,7 +85,7 @@ class PreStringHandler:
                     newLine += self._label
                     for val in value:
                         newLine += str(val)+self._delim
-                    newLine = newLine[0:-1]+"\n"
+                    newLine = newLine[0:-len(self._delim)]+"\n"
                 #end
                 lines[i] = newLine
             #end
