@@ -34,7 +34,7 @@ Any object implementing write(values,file) or read(file) can be used, four class
 - **TableReader/Writer**: Reads or writes to a section of a delimited table, rows outside of the table range do not need to be in table format, but those inside are expected to have the same number of columns, the examples should make it clear how to use these classes.
 
 ## Installation
-Make the parent directory ("../") and FADO's ("./") reachable to Python, usually via PYTHON_PATH, `from FADO import *` should then work (provided the name of the directory was not changed).
+Make the parent directory ("../") and FADO's ("./") reachable to Python, usually via PYTHONPATH, `from FADO import *` should then work (provided the name of the directory was not changed).
 
 ## Usage
 Have a look at the examples, example1 is a contrived example using the Rosenbrock function, the others are realistic uses of [SU2](https://su2code.github.io/).
