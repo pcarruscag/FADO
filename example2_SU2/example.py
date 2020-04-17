@@ -42,12 +42,12 @@ adjointRun2.addParameter(fType_constraint)
 adjointRun2.addParameter(beta)
 
 # Functions
-fun1 = Function("reference_node","DIRECT/of_refnode.dat",TableReader(0,0))
+fun1 = Function("reference_node","DIRECT/history.csv",TableReader(0,0,(1,0)))
 fun1.addInputVariable(rho,"ADJOINT1/grad.dat",TableReader(None,0))
 fun1.addValueEvalStep(directRun)
 fun1.addGradientEvalStep(adjointRun1)
 
-fun2 = Function("solid_fraction","ADJOINT2/of_volfrac.dat",TableReader(0,0))
+fun2 = Function("solid_fraction","ADJOINT2/history.csv",TableReader(0,0,(1,0)))
 fun2.addInputVariable(rho,"ADJOINT2/grad.dat",TableReader(None,0))
 fun2.addValueEvalStep(directRun)
 fun2.addValueEvalStep(adjointRun2)
