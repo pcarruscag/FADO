@@ -132,6 +132,10 @@ class Function(FunctionBase):
         idx = 0
         for var,file,parser in zip(self._variables,self._gradFiles,self._gradParse):
             grad = parser.read(file)
+            if var.getSize() == 1:
+                try: grad = sum(grad)
+                except: pass
+            #end
             if mask is not None: idx = mask[var]
             try:
                 for val in grad:

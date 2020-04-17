@@ -42,6 +42,34 @@ class LabelReplacer:
 #end
 
 
+# Replace text labels by arrays of values
+class ArrayLabelReplacer:
+    def __init__(self,label,delim=","):
+        self._label = label
+        self._delim = delim
+
+    def write(self,file,value):
+        fid = open(file,"r")
+        lines = fid.readlines()
+        fid.close()
+
+        valueStr = ""
+        for v in value:
+            valueStr += str(v)+self._delim
+        valueStr.strip(self._delim)
+
+        newlines = []
+        for line in lines:
+            newlines.append(line.replace(self._label,valueStr))
+        #end
+
+        fid = open(file,"w")
+        fid.writelines(newlines)
+        fid.close()
+    #end
+#end
+
+
 # Read or write "delim"-separated values in front of a label (pre-string)
 class PreStringHandler:
     def __init__(self,label,delim=","):
