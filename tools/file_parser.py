@@ -56,7 +56,7 @@ class ArrayLabelReplacer:
         valueStr = ""
         for v in value:
             valueStr += str(v)+self._delim
-        valueStr.strip(self._delim)
+        valueStr = valueStr.strip(self._delim)
 
         newlines = []
         for line in lines:
