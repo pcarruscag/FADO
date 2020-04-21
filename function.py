@@ -80,6 +80,9 @@ class Function(FunctionBase):
         self._gradFiles = []
         self._gradParse = []
 
+        # default value when evaluation fails
+        self._defaultValue = None
+
     def addInputVariable(self,variable,gradFile,gradParser):
         self._variables.append(variable)
         self._gradFiles.append(gradFile)
@@ -174,6 +177,15 @@ class Function(FunctionBase):
 
     def getGradientEvalChain(self):
         return self._gradEval
+
+    def hasDefaultValue(self):
+        return self._defaultValue is not None
+
+    def setDefaultValue(self,value):
+        self._defaultValue = value
+
+    def getDefaultValue(self):
+        return self._defaultValue
 #end
 
 

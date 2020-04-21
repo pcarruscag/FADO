@@ -76,6 +76,7 @@ class DriverBase:
         self._workDir = "__WORKDIR__"
         self._dirPrefix = "DSN_"
         self._keepDesigns = True
+        self._failureMode = "HARD"
         self._logObj = None
         self._logColWidth = 13
         self._hisObj = None
@@ -190,6 +191,10 @@ class DriverBase:
     def setStorageMode(self,keepDesigns=False,dirPrefix="DSN_"):
         self._keepDesigns = keepDesigns
         self._dirPrefix = dirPrefix
+
+    def setFailureMode(self,mode):
+        assert mode is "HARD" or mode is "SOFT", "Mode must be either \"HARD\" (exceptions) or \"SOFT\" (default function values)."
+        self._failureMode = mode
 
     def setUserPreProcessFun(self,command):
         self._userPreProcessFun = command

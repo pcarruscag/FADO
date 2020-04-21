@@ -108,7 +108,7 @@ class InputVariable:
     #end
 
     def setCurrent(self,x):
-        for i in range(x.size): self._x[i] = x[i]
+        self._x[()] = x
 
     def writeToFile(self,file):
         self._parser.write(file,self._x)

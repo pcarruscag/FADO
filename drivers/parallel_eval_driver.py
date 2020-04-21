@@ -15,6 +15,7 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with FADO.  If not, see <https://www.gnu.org/licenses/>.
 
+import os
 import time
 from drivers.base_driver import DriverBase
 
@@ -31,6 +32,7 @@ class ParallelEvalDriver(DriverBase):
         self._jacTime = 0
 
         # variables for parallelization of evaluations
+        self._asNeeded = asNeeded
         self._parallelEval = False
         self._funEvalGraph = None
         self._jacEvalGraph = None
@@ -126,17 +128,17 @@ class ParallelEvalDriver(DriverBase):
                 active[evl] = True
 
         for (obj,f) in zip(self._constraintsLT,self._ltval):
-            if f > 0.0:
+            if f > 0.0 or not self._asNeeded:
                 for evl in obj.function.getGradientEvalChain():
                     active[evl] = True
 
         for (obj,f) in zip(self._constraintsGT,self._gtval):
-            if f < 0.0:
+            if f < 0.0 or not self._asNeeded:
                 for evl in obj.function.getGradientEvalChain():
                     active[evl] = True
 
         for (obj,f) in zip(self._constraintsIN,self._inval):
-            if f > 1.0 or f < 0.0:
+            if f > 1.0 or f < 0.0 or not self._asNeeded:
                 for evl in obj.function.getGradientEvalChain():
                     active[evl] = True
 
@@ -169,6 +171,67 @@ class ParallelEvalDriver(DriverBase):
             time.sleep(self._waitTime)
         #end
         self._jacTime += time.time()
+    #end
+
+    # evaluate everything, either in parallel or sequentially, and fetch the function values
+    def _evalAndRetrieveFunctionValues(self):
+        os.chdir(self._workDir)
+
+        if self._parallelEval:
+            try:
+                self._evalFunInParallel()
+            except:
+                if self._failureMode is "HARD": raise
+        #end
+
+        self._funEval += 1
+        self._funTime -= time.time()
+
+        def fetchValues(dst, src):
+            for i in range(dst.size):
+                try:
+                    dst[i] = src[i].function.getValue()
+                except:
+                    if src[i].function.hasDefaultValue() and self._failureMode is "SOFT":
+                        dst[i] = src[i].function.getDefaultValue()
+                    else:
+                        raise
+                #end
+            #end
+        #end
+
+        fetchValues(self._ofval, self._objectives)
+        fetchValues(self._eqval, self._constraintsEQ)
+        fetchValues(self._ltval, self._constraintsLT)
+        fetchValues(self._gtval, self._constraintsGT)
+        fetchValues(self._inval, self._constraintsIN)
+
+        self._funTime += time.time()
+
+        # monitor convergence (raw function values)
+        self._writeHisLine()
+
+        # shift constraints and scale as required
+        for i in range(self._ofval.size):
+            self._ofval[i] *= self._objectives[i].scale
+
+        for i in range(self._eqval.size):
+            self._eqval[i] -= self._constraintsEQ[i].bound1
+            self._eqval[i] *= self._constraintsEQ[i].scale
+
+        for i in range(self._ltval.size):
+            self._ltval[i] -= self._constraintsLT[i].bound1
+            self._ltval[i] *= self._constraintsLT[i].scale
+
+        for i in range(self._gtval.size):
+            self._gtval[i] -= self._constraintsGT[i].bound1
+            self._gtval[i] *= self._constraintsGT[i].scale
+
+        for i in range(self._inval.size):
+            self._inval[i] -= self._constraintsIN[i].bound1
+            self._inval[i] *= self._constraintsIN[i].scale
+
+        os.chdir(self._userDir)
     #end
 #end
 

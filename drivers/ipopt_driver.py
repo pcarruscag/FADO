@@ -47,6 +47,10 @@ class IpoptDriver(ParallelEvalDriver):
 
         # the optimization problem
         self._nlp = None
+
+        # old values of the gradients, as fallback in case of evaluation failure
+        self._old_grad_f = None
+        self._old_jac_g = None
     #end
 
     # Update the problem parameters (triggers new evaluations).
@@ -193,17 +197,27 @@ class IpoptDriver(ParallelEvalDriver):
     def _eval_grad_f(self, x, out):
         assert out.size >= self._nVar, "Wrong size of gradient vector (\"out\")."
 
-        if self._handleVariableChange(x):
-            self._evaluateGradients()
-        #end
-
         self._jacTime -= time.time()
-        os.chdir(self._workDir)
 
-        out[()] = 0.0
-        for obj in self._objectives:
-            out += obj.function.getGradient(self._variableStartMask) * obj.scale
-        out /= self._varScales
+        try:
+            if self._handleVariableChange(x):
+                self._evaluateGradients()
+            #end
+
+            os.chdir(self._workDir)
+
+            out[()] = 0.0
+            for obj in self._objectives:
+                out += obj.function.getGradient(self._variableStartMask) * obj.scale
+            out /= self._varScales
+
+            # keep reference to result to use as fallback on next iteration if needed
+            self._old_grad_f = out
+        except:
+            if self._failureMode is "HARD": raise
+            if self._old_grad_f is None: out[()] = 0.0
+            else: out[()] = self._old_grad_f
+        #end
 
         self._jacTime += time.time()
         os.chdir(self._userDir)
@@ -238,22 +252,32 @@ class IpoptDriver(ParallelEvalDriver):
     def _eval_jac_g(self, x, out):
         assert out.size >= self._nCon*self._nVar, "Wrong size of constraint Jacobian vector (\"out\")."
 
-        if self._handleVariableChange(x):
-            self._evaluateGradients()
-        #end
-
         self._jacTime -= time.time()
-        os.chdir(self._workDir)
 
-        i = 0
-        mask = self._variableStartMask
-
-        for conType in [self._constraintsEQ, self._constraintsLT,\
-                        self._constraintsGT, self._constraintsIN]:
-            for con in conType:
-                out[i:(i+self._nVar)] = con.function.getGradient(mask) * con.scale / self._varScales
-                i += self._nVar
+        try:
+            if self._handleVariableChange(x):
+                self._evaluateGradients()
             #end
+
+            os.chdir(self._workDir)
+
+            i = 0
+            mask = self._variableStartMask
+
+            for conType in [self._constraintsEQ, self._constraintsLT,\
+                            self._constraintsGT, self._constraintsIN]:
+                for con in conType:
+                    out[i:(i+self._nVar)] = con.function.getGradient(mask) * con.scale / self._varScales
+                    i += self._nVar
+                #end
+            #end
+
+            # keep reference to result to use as fallback on next iteration if needed
+            self._old_jac_g = out
+        except:
+            if self._failureMode is "HARD": raise
+            if self._old_jac_g is None: out[()] = 0.0
+            else: out[()] = self._old_jac_g
         #end
 
         self._jacTime += time.time()
@@ -273,55 +297,7 @@ class IpoptDriver(ParallelEvalDriver):
             sp.call(self._userPreProcessFun,shell=True)
         #end
 
-        os.chdir(self._workDir)
-
-        # evaluate everything, either in parallel or sequentially
-        if self._parallelEval: self._evalFunInParallel()
-
-        self._funEval += 1
-        self._funTime -= time.time()
-
-        for i in range(self._ofval.size):
-            self._ofval[i] = self._objectives[i].function.getValue()
-
-        for i in range(self._eqval.size):
-            self._eqval[i] = self._constraintsEQ[i].function.getValue()
-
-        for i in range(self._ltval.size):
-            self._ltval[i] = self._constraintsLT[i].function.getValue()
-
-        for i in range(self._gtval.size):
-            self._gtval[i] = self._constraintsGT[i].function.getValue()
-
-        for i in range(self._inval.size):
-            self._inval[i] = self._constraintsIN[i].function.getValue()
-
-        self._funTime += time.time()
-
-        # monitor convergence (raw function values)
-        self._writeHisLine()
-
-        # shift constraints and scale as required
-        for i in range(self._ofval.size):
-            self._ofval[i] *= self._objectives[i].scale
-
-        for i in range(self._eqval.size):
-            self._eqval[i] -= self._constraintsEQ[i].bound1
-            self._eqval[i] *= self._constraintsEQ[i].scale
-
-        for i in range(self._ltval.size):
-            self._ltval[i] -= self._constraintsLT[i].bound1
-            self._ltval[i] *= self._constraintsLT[i].scale
-
-        for i in range(self._gtval.size):
-            self._gtval[i] -= self._constraintsGT[i].bound1
-            self._gtval[i] *= self._constraintsGT[i].scale
-
-        for i in range(self._inval.size):
-            self._inval[i] -= self._constraintsIN[i].bound1
-            self._inval[i] *= self._constraintsIN[i].scale
-
-        os.chdir(self._userDir)
+        self._evalAndRetrieveFunctionValues()
 
         self._funReady = True
     #end

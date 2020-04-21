@@ -17,6 +17,7 @@
 
 import os
 import time
+import copy
 import shutil
 import numpy as np
 import subprocess as sp
@@ -44,6 +45,7 @@ class ExteriorPenaltyDriver(ParallelEvalDriver):
 
         # gradient vector
         self._grad = None
+        self._old_grad = None
 
         # timers, counters, flags
         self._funEval = 0
@@ -69,6 +71,7 @@ class ExteriorPenaltyDriver(ParallelEvalDriver):
         self._inpen = np.ones((len(self._constraintsIN),))*self._rini
 
         self._grad = np.zeros((self.getNumVariables(),))
+        self._old_grad = copy.deepcopy(self._grad)
 
         # write the header for the log file and set the format
         if self._logObj is not None:
@@ -181,56 +184,11 @@ class ExteriorPenaltyDriver(ParallelEvalDriver):
             #end
         #end
         os.mkdir(self._workDir)
-        os.chdir(self._workDir)
 
         # update the values of the variables
         self._setCurrent(x)
 
-        if self._parallelEval: self._evalFunInParallel()
-
-        # evaluate everything (sequential for now)
-        self._funEval += 1
-        self._funTime -= time.time()
-
-        for i in range(self._ofval.size):
-            self._ofval[i] = self._objectives[i].function.getValue()
-
-        for i in range(self._eqval.size):
-            self._eqval[i] = self._constraintsEQ[i].function.getValue()
-
-        for i in range(self._ltval.size):
-            self._ltval[i] = self._constraintsLT[i].function.getValue()
-
-        for i in range(self._gtval.size):
-            self._gtval[i] = self._constraintsGT[i].function.getValue()
-
-        for i in range(self._inval.size):
-            self._inval[i] = self._constraintsIN[i].function.getValue()
-        
-        self._funTime += time.time()
-
-        # monitor convergence
-        self._writeHisLine()
-
-        # shift constraints and scale as required
-        for i in range(self._ofval.size):
-            self._ofval[i] *= self._objectives[i].scale
-
-        for i in range(self._eqval.size):
-            self._eqval[i] -= self._constraintsEQ[i].bound1
-            self._eqval[i] *= self._constraintsEQ[i].scale
-
-        for i in range(self._ltval.size):
-            self._ltval[i] -= self._constraintsLT[i].bound1
-            self._ltval[i] *= self._constraintsLT[i].scale
-
-        for i in range(self._gtval.size):
-            self._gtval[i] -= self._constraintsGT[i].bound1
-            self._gtval[i] *= self._constraintsGT[i].scale
-
-        for i in range(self._inval.size):
-            self._inval[i] -= self._constraintsIN[i].bound1
-            self._inval[i] *= self._constraintsIN[i].scale
+        self._evalAndRetrieveFunctionValues()
 
         # combine results
         f  = self._ofval.sum()
@@ -240,12 +198,20 @@ class ExteriorPenaltyDriver(ParallelEvalDriver):
         for (g,r) in zip(self._inval,self._inpen): f += r*(min(0.0,g)+max(1.0,g)-1.0)*g
 
         self._resetAllValueEvaluations()
-        os.chdir(self._userDir)
 
         return f
     #end
 
     def grad(self,x):
+        try:
+            return self._grad_impl(x)
+        except:
+            if self._failureMode is "HARD": raise
+            return self._old_grad
+        #end
+    #end
+
+    def _grad_impl(self,x):
         if self._userPreProcessGrad:
             os.chdir(self._userDir)
             sp.call(self._userPreProcessGrad,shell=True)
@@ -261,7 +227,7 @@ class ExteriorPenaltyDriver(ParallelEvalDriver):
         self._jacEval += 1
         self._jacTime -= time.time()
 
-        self._grad *= 0.0
+        self._grad[()] = 0.0
 
         for obj in self._objectives:
             self._grad += obj.function.getGradient(self._variableStartMask)*obj.scale
@@ -291,6 +257,9 @@ class ExteriorPenaltyDriver(ParallelEvalDriver):
 
         self._resetAllGradientEvaluations()
         os.chdir(self._userDir)
+
+        # make copy to use as fallback
+        self._old_grad[()] = self._grad
 
         return self._grad
     #end

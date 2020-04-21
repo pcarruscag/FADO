@@ -25,7 +25,7 @@ var1 = InputVariable(0.0,LabelReplacer("__X__"))
 var2 = InputVariable(0.0,LabelReplacer("__Y__"))
 
 # Parameters
-# these parameters taylor the template config to each function
+# these parameters tailor the template config to each function
 parData1 = Parameter(["data1.txt"],LabelReplacer("__DATA_FILE__"))
 parData2 = Parameter(["data2.txt"],LabelReplacer("__DATA_FILE__"))
 parFunc1 = Parameter(["rosenbrock"],LabelReplacer("__FUNCTION__"))
