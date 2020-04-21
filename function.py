@@ -1,4 +1,4 @@
-#  Copyright 2019, Pedro Gomes.
+#  Copyright 2019-2020, Pedro Gomes.
 #
 #  This file is part of FADO.
 #
