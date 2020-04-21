@@ -80,7 +80,7 @@ class ExternalRun:
 
     def initialize(self):
         if self._isIni: return
-        
+
         os.mkdir(self._workDir)
         for file in self._dataFiles:
             target = os.path.join(self._workDir,os.path.basename(file))
@@ -96,6 +96,8 @@ class ExternalRun:
 
         self._createProcess()
         self._isIni = True
+        self._isRun = False
+        self._numTries = 0
     #end
 
     def _createProcess(self):
@@ -117,12 +119,12 @@ class ExternalRun:
 
         self._retcode = self._process.wait(timeout)
         self._numTries += 1
-        
+
         if not self._success():
             self.finalize()
             self._createProcess()
             self._isIni = True
-            return self._run(timeout)
+            return self.run(timeout)
         #end
 
         self._numTries = 0
