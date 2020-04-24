@@ -147,7 +147,7 @@ class IpoptDriver(ParallelEvalDriver):
     #end
 
     # Detect a change in the design vector, reset directories and evaluation state.
-    def _handleVariableChange(self,x):
+    def _handleVariableChange(self, x):
         assert x.size == self._nVar, "Wrong size of design vector."
 
         newValues = (abs(self._x-x) > np.finfo(float).eps).any()
@@ -184,11 +184,8 @@ class IpoptDriver(ParallelEvalDriver):
 
     # Method passed to Ipopt to get the objective value,
     # evaluates all functions if necessary.
-    def _eval_f(self,x):
-        if self._handleVariableChange(x):
-            self._evaluateFunctions()
-        #end
-
+    def _eval_f(self, x):
+        self._evaluateFunctions(x)
         return self._ofval.sum()
     #end
 
@@ -200,9 +197,7 @@ class IpoptDriver(ParallelEvalDriver):
         self._jacTime -= time.time()
 
         try:
-            if self._handleVariableChange(x):
-                self._evaluateGradients()
-            #end
+            self._evaluateGradients(x)
 
             os.chdir(self._workDir)
 
@@ -229,9 +224,7 @@ class IpoptDriver(ParallelEvalDriver):
     def _eval_g(self, x, out):
         assert out.size >= self._nCon, "Wrong size of constraint vector (\"out\")."
 
-        if self._handleVariableChange(x):
-            self._evaluateFunctions()
-        #end
+        self._evaluateFunctions(x)
 
         i = 0
         out[i:(i+len(self._constraintsEQ))] = self._eqval
@@ -255,9 +248,7 @@ class IpoptDriver(ParallelEvalDriver):
         self._jacTime -= time.time()
 
         try:
-            if self._handleVariableChange(x):
-                self._evaluateGradients()
-            #end
+            self._evaluateGradients(x)
 
             os.chdir(self._workDir)
 
@@ -288,7 +279,9 @@ class IpoptDriver(ParallelEvalDriver):
 
     # Evaluate all functions (objectives and constraints), imediately
     # retrieves and stores the results after shifting and scaling.
-    def _evaluateFunctions(self):
+    def _evaluateFunctions(self, x):
+        self._handleVariableChange(x)
+
         # lazy evaluation
         if self._funReady: return
 
@@ -305,12 +298,12 @@ class IpoptDriver(ParallelEvalDriver):
     # Evaluates all gradients in parallel execution mode, otherwise
     # it only runs the user preprocessing and the execution takes place
     # when the results are read in "_eval_grad_f" or in "_eval_jac_g".
-    def _evaluateGradients(self):
+    def _evaluateGradients(self, x):
         # lazy evaluation
         if self._jacReady: return
 
         # we assume that evaluating the gradients requires the functions
-        self._evaluateFunctions()
+        self._evaluateFunctions(x)
 
         if self._userPreProcessGrad:
             os.chdir(self._userDir)

@@ -1,7 +1,6 @@
 # Plain topology optimization example
 
 from FADO import *
-import scipy.optimize
 import subprocess
 import ipyopt
 subprocess.call("unzip -o ../example1_SU2/data.zip",shell=True)
@@ -47,12 +46,12 @@ constraint.addParameter(adjointOutput)
 constraint.addParameter(beta)
 
 # Functions
-fun1 = Function("reference_node","OBJECTIVE/of_topcomp.dat",TableReader(0,0))
+fun1 = Function("compliance","OBJECTIVE/history.csv",TableReader(0,0,(1,None)))
 fun1.addInputVariable(rho,"OBJECTIVE/grad.dat",TableReader(None,0))
 fun1.addValueEvalStep(direct)
 fun1.addValueEvalStep(objective)
 
-fun2 = Function("solid_fraction","CONSTRAINT/of_volfrac.dat",TableReader(0,0))
+fun2 = Function("solid_fraction","CONSTRAINT/history.csv",TableReader(0,0,(1,None)))
 fun2.addInputVariable(rho,"CONSTRAINT/grad.dat",TableReader(None,0))
 fun2.addValueEvalStep(direct)
 fun2.addValueEvalStep(constraint)
