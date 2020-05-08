@@ -231,6 +231,8 @@ class ParallelEvalDriver(DriverBase):
             self._inval[i] -= self._constraintsIN[i].bound1
             self._inval[i] *= self._constraintsIN[i].scale
 
+        self._funReady = True
+
         os.chdir(self._userDir)
     #end
 #end

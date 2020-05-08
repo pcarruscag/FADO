@@ -17,7 +17,6 @@
 
 import os
 import time
-import shutil
 import numpy as np
 import ipyopt as opt
 import subprocess as sp
@@ -29,18 +28,10 @@ class IpoptDriver(ParallelEvalDriver):
     def __init__(self):
         ParallelEvalDriver.__init__(self)
 
-        # counters, flags
+        # counters, flags, sizes...
         self._funEval = 0
         self._jacEval = 0
-        self._funReady = False
-        self._jacReady = False
-
-        # sizes
-        self._nVar = 0
         self._nCon = 0
-
-        # current value of the variables
-        self._x = None
 
         # sparse indices of the constraint gradient, for now assumed to be dense
         self._sparseIndices = None
@@ -96,10 +87,6 @@ class IpoptDriver(ParallelEvalDriver):
             self._hisObj.write(header)
         #end
 
-        # initialize current values such that evaluations are triggered on first call
-        self._nVar = self.getNumVariables()
-        self._x = np.ones([self._nVar,])*1e20
-
         # prepare constraint information, the bounds are based on the shifting and scaling
         self._nCon = len(self._constraintsEQ) + len(self._constraintsLT) +\
                      len(self._constraintsGT) + len(self._constraintsIN)
@@ -126,60 +113,6 @@ class IpoptDriver(ParallelEvalDriver):
                                 self._nCon, conLowerBound, conUpperBound, self._sparseIndices, 0,
                                 self._eval_f, self._eval_grad_f, self._eval_g, self._eval_jac_g)
         return self._nlp
-    #end
-
-    # Writes a line to the history file.
-    def _writeHisLine(self):
-        if self._hisObj is None: return
-        hisLine = str(self._funEval)+self._hisDelim
-        for val in self._ofval:
-            hisLine += str(val)+self._hisDelim
-        for val in self._eqval:
-            hisLine += str(val)+self._hisDelim
-        for val in self._ltval:
-            hisLine += str(val)+self._hisDelim
-        for val in self._gtval:
-            hisLine += str(val)+self._hisDelim
-        for val in self._inval:
-            hisLine += str(val)+self._hisDelim
-        hisLine = hisLine.strip(self._hisDelim)+"\n"
-        self._hisObj.write(hisLine)
-    #end
-
-    # Detect a change in the design vector, reset directories and evaluation state.
-    def _handleVariableChange(self, x):
-        assert x.size == self._nVar, "Wrong size of design vector."
-
-        newValues = (abs(self._x-x) > np.finfo(float).eps).any()
-
-        if not newValues: return False
-
-        # otherwise...
-
-        # update the values of the variables
-        self._setCurrent(x)
-        self._x[()] = x
-
-        # manage working directories
-        os.chdir(self._userDir)
-        if os.path.isdir(self._workDir):
-            if self._keepDesigns:
-                dirName = self._dirPrefix+str(self._funEval).rjust(3,"0")
-                if os.path.isdir(dirName): shutil.rmtree(dirName)
-                os.rename(self._workDir,dirName)
-            else:
-                shutil.rmtree(self._workDir)
-            #end
-        #end
-        os.mkdir(self._workDir)
-
-        # trigger evaluations
-        self._funReady = False
-        self._jacReady = False
-        self._resetAllValueEvaluations()
-        self._resetAllGradientEvaluations()
-
-        return True
     #end
 
     # Method passed to Ipopt to get the objective value,
@@ -291,19 +224,17 @@ class IpoptDriver(ParallelEvalDriver):
         #end
 
         self._evalAndRetrieveFunctionValues()
-
-        self._funReady = True
     #end
 
     # Evaluates all gradients in parallel execution mode, otherwise
     # it only runs the user preprocessing and the execution takes place
     # when the results are read in "_eval_grad_f" or in "_eval_jac_g".
     def _evaluateGradients(self, x):
+        # we assume that evaluating the gradients requires the functions
+        self._evaluateFunctions(x)        
+
         # lazy evaluation
         if self._jacReady: return
-
-        # we assume that evaluating the gradients requires the functions
-        self._evaluateFunctions(x)
 
         if self._userPreProcessGrad:
             os.chdir(self._userDir)
@@ -321,3 +252,5 @@ class IpoptDriver(ParallelEvalDriver):
         self._jacEval += 1
         self._jacReady = True
     #end
+#end
+

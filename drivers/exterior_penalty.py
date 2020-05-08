@@ -18,7 +18,6 @@
 import os
 import time
 import copy
-import shutil
 import numpy as np
 import subprocess as sp
 from drivers.parallel_eval_driver import ParallelEvalDriver
@@ -126,23 +125,6 @@ class ExteriorPenaltyDriver(ParallelEvalDriver):
         self._isInit = True
     #end
 
-    def _writeHisLine(self):
-        if self._hisObj is None: return
-        hisLine = str(self._funEval)+self._hisDelim
-        for val in self._ofval:
-            hisLine += str(val)+self._hisDelim
-        for val in self._eqval:
-            hisLine += str(val)+self._hisDelim
-        for val in self._ltval:
-            hisLine += str(val)+self._hisDelim
-        for val in self._gtval:
-            hisLine += str(val)+self._hisDelim
-        for val in self._inval:
-            hisLine += str(val)+self._hisDelim
-        hisLine = hisLine.strip(self._hisDelim)+"\n"
-        self._hisObj.write(hisLine)
-    #end
-
     def _writeLogLine(self):
         if self._logObj is None: return
         data = [self._funEval, self._funTime, self._jacEval, self._jacTime]
@@ -165,30 +147,19 @@ class ExteriorPenaltyDriver(ParallelEvalDriver):
     #end        
 
     def fun(self,x):
-        self._initialize()
+        self._handleVariableChange(x)
 
-        if self._userPreProcessFun:
-            os.chdir(self._userDir)
-            sp.call(self._userPreProcessFun,shell=True)
-        #end
+        # lazy evaluation
+        if not self._funReady:
+            self._initialize()
 
-        # manage working directories
-        os.chdir(self._userDir)
-        if os.path.isdir(self._workDir):
-            if self._keepDesigns:
-                dirName = self._dirPrefix+str(self._funEval).rjust(3,"0")
-                if os.path.isdir(dirName): shutil.rmtree(dirName)
-                os.rename(self._workDir,dirName)
-            else:
-                shutil.rmtree(self._workDir)
+            if self._userPreProcessFun:
+                os.chdir(self._userDir)
+                sp.call(self._userPreProcessFun,shell=True)
             #end
+
+            self._evalAndRetrieveFunctionValues()
         #end
-        os.mkdir(self._workDir)
-
-        # update the values of the variables
-        self._setCurrent(x)
-
-        self._evalAndRetrieveFunctionValues()
 
         # combine results
         f  = self._ofval.sum()
@@ -197,28 +168,33 @@ class ExteriorPenaltyDriver(ParallelEvalDriver):
         for (g,r) in zip(self._gtval,self._gtpen): f += r*min(0.0,g)*g
         for (g,r) in zip(self._inval,self._inpen): f += r*(min(0.0,g)+max(1.0,g)-1.0)*g
 
-        self._resetAllValueEvaluations()
-
         return f
     #end
 
     def grad(self,x):
         try:
-            return self._grad_impl(x)
+            self._evaluateGradients(x)
+            return self._grad
         except:
             if self._failureMode is "HARD": raise
             return self._old_grad
         #end
     #end
 
-    def _grad_impl(self,x):
+    def _evaluateGradients(self,x):
+        # we assume that evaluating the gradients requires the functions
+        self.fun(x)        
+
+        # lazy evaluation
+        if self._jacReady: return
+
         if self._userPreProcessGrad:
             os.chdir(self._userDir)
             sp.call(self._userPreProcessGrad,shell=True)
         #end
-        
-        os.chdir(os.path.join(self._userDir,self._workDir))
-        
+
+        os.chdir(self._workDir)
+
         # initializing and updating values was done when evaluating the function
 
         if self._parallelEval: self._evalJacInParallel()
@@ -261,14 +237,14 @@ class ExteriorPenaltyDriver(ParallelEvalDriver):
         # make copy to use as fallback
         self._old_grad[()] = self._grad
 
-        return self._grad
+        self._jacReady = True
     #end
 
     # if the constraint is active and above tolerance increase the penalty
     # otherwise decrease (minimum and maximum are constrained)
     def update(self,paramsIfFeasible=False):
         self._isFeasible = True
-        
+
         # equality (always active)
         for i in range(self._eqpen.size):
             if abs(self._eqval[i]) > self._tol:
@@ -304,10 +280,18 @@ class ExteriorPenaltyDriver(ParallelEvalDriver):
             for par in self._parameters:
                 par.increment()
 
+        # trigger new evaluations
+        self._x[()] = 1e20
+        self._funReady = False
+        self._jacReady = False
+        self._resetAllValueEvaluations()
+        self._resetAllGradientEvaluations()
+
         # log update
         self._writeLogLine()
     #end
 
     def feasibleDesign(self):
         return self._isFeasible
+#end
 

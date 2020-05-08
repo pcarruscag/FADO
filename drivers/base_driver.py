@@ -16,6 +16,7 @@
 #  along with FADO.  If not, see <https://www.gnu.org/licenses/>.
 
 import os
+import shutil
 import numpy as np
 
 
@@ -54,6 +55,12 @@ class DriverBase:
         self._variables = []
         self._varScales = None
         self._parameters = []
+
+        # lazy evaluation flags, and current value of the variables
+        self._funReady = False
+        self._jacReady = False
+        self._nVar = 0
+        self._x = None
 
         # functions by role
         self._objectives = []
@@ -184,6 +191,10 @@ class DriverBase:
 
         self._varScales = self._getConcatenatedVector("Scale")
 
+        # initialize current values such that evaluations are triggered on first call
+        self._nVar = self.getNumVariables()
+        self._x = np.ones([self._nVar,])*1e20
+
         # store the absolute current path
         self._userDir = os.path.abspath(os.curdir)
     #end
@@ -226,6 +237,60 @@ class DriverBase:
             obj.function.resetGradientEvalChain()
         for obj in self._constraintsIN:
             obj.function.resetGradientEvalChain()
+    #end
+
+    # Writes a line to the history file.
+    def _writeHisLine(self):
+        if self._hisObj is None: return
+        hisLine = str(self._funEval)+self._hisDelim
+        for val in self._ofval:
+            hisLine += str(val)+self._hisDelim
+        for val in self._eqval:
+            hisLine += str(val)+self._hisDelim
+        for val in self._ltval:
+            hisLine += str(val)+self._hisDelim
+        for val in self._gtval:
+            hisLine += str(val)+self._hisDelim
+        for val in self._inval:
+            hisLine += str(val)+self._hisDelim
+        hisLine = hisLine.strip(self._hisDelim)+"\n"
+        self._hisObj.write(hisLine)
+    #end
+
+    # Detect a change in the design vector, reset directories and evaluation state.
+    def _handleVariableChange(self, x):
+        assert x.size == self._nVar, "Wrong size of design vector."
+
+        newValues = (abs(self._x-x) > np.finfo(float).eps).any()
+
+        if not newValues: return False
+
+        # otherwise...
+
+        # update the values of the variables
+        self._setCurrent(x)
+        self._x[()] = x
+
+        # manage working directories
+        os.chdir(self._userDir)
+        if os.path.isdir(self._workDir):
+            if self._keepDesigns:
+                dirName = self._dirPrefix+str(self._funEval).rjust(3,"0")
+                if os.path.isdir(dirName): shutil.rmtree(dirName)
+                os.rename(self._workDir,dirName)
+            else:
+                shutil.rmtree(self._workDir)
+            #end
+        #end
+        os.mkdir(self._workDir)
+
+        # trigger evaluations
+        self._funReady = False
+        self._jacReady = False
+        self._resetAllValueEvaluations()
+        self._resetAllGradientEvaluations()
+
+        return True
     #end
 #end
 
