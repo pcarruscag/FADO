@@ -41,13 +41,9 @@ class DriverBase:
     #end
 
     class _Constraint:
-        def __init__(self,function,scale,bound1=-1E20,bound2=1E20):
-            if scale <= 0.0:
-                raise ValueError("Scale must be positive.")
-
+        def __init__(self,function,scale,bound=-1E20):
             self.scale = scale
-            self.bound1 = bound1
-            self.bound2 = bound2
+            self.bound = bound
             self.function = function
     #end
 
@@ -65,16 +61,12 @@ class DriverBase:
         # functions by role
         self._objectives = []
         self._constraintsEQ = []
-        self._constraintsLT = []
         self._constraintsGT = []
-        self._constraintsIN = []
 
         # function values
         self._ofval = None
         self._eqval = None
-        self._ltval = None
         self._gtval = None
-        self._inval = None
 
         # map the start index of each variable in the design vector
         self._variableStartMask = None
@@ -97,17 +89,22 @@ class DriverBase:
         self._objectives.append(self._Objective(type,function,scale,weight))
 
     def addEquality(self,function,target=0.0,scale=1.0):
+        if scale <= 0.0: raise ValueError("Scale must be positive.")
         self._constraintsEQ.append(self._Constraint(function,scale,target))
 
-    def addUpperBound(self,function,bound=0.0,scale=1.0):
-        self._constraintsLT.append(self._Constraint(function,scale,bound))
-
     def addLowerBound(self,function,bound=0.0,scale=1.0):
+        if scale <= 0.0: raise ValueError("Scale must be positive.")
         self._constraintsGT.append(self._Constraint(function,scale,bound))
 
+    def addUpperBound(self,function,bound=0.0,scale=1.0):
+        if scale <= 0.0: raise ValueError("Scale must be positive.")
+        self._constraintsGT.append(self._Constraint(function,-1*scale,bound))
+
     def addUpLowBound(self,function,lower=-1.0,upper=1.0):
+        if lower >= upper: raise ValueError("Upper bound must be greater than lower bound.")
         scale = 1.0/(upper-lower)
-        self._constraintsIN.append(self._Constraint(function,scale,lower,upper))
+        self._constraintsGT.append(self._Constraint(function,scale,lower))
+        self._constraintsGT.append(self._Constraint(function,-1*scale,upper))
 
     def setWorkingDirectory(self,dir):
         self._workDir = dir
@@ -179,9 +176,7 @@ class DriverBase:
         self._parameters = []
         self._getVarsAndParsFromFun(self._objectives)
         self._getVarsAndParsFromFun(self._constraintsEQ)
-        self._getVarsAndParsFromFun(self._constraintsLT)
         self._getVarsAndParsFromFun(self._constraintsGT)
-        self._getVarsAndParsFromFun(self._constraintsIN)
 
         # map the start index of each variable in the design vector
         idx = [0]
@@ -218,11 +213,7 @@ class DriverBase:
             obj.function.resetValueEvalChain()
         for obj in self._constraintsEQ:
             obj.function.resetValueEvalChain()
-        for obj in self._constraintsLT:
-            obj.function.resetValueEvalChain()
         for obj in self._constraintsGT:
-            obj.function.resetValueEvalChain()
-        for obj in self._constraintsIN:
             obj.function.resetValueEvalChain()
     #end
 
@@ -231,11 +222,7 @@ class DriverBase:
             obj.function.resetGradientEvalChain()
         for obj in self._constraintsEQ:
             obj.function.resetGradientEvalChain()
-        for obj in self._constraintsLT:
-            obj.function.resetGradientEvalChain()
         for obj in self._constraintsGT:
-            obj.function.resetGradientEvalChain()
-        for obj in self._constraintsIN:
             obj.function.resetGradientEvalChain()
     #end
 
@@ -247,11 +234,7 @@ class DriverBase:
             hisLine += str(val)+self._hisDelim
         for val in self._eqval:
             hisLine += str(val)+self._hisDelim
-        for val in self._ltval:
-            hisLine += str(val)+self._hisDelim
         for val in self._gtval:
-            hisLine += str(val)+self._hisDelim
-        for val in self._inval:
             hisLine += str(val)+self._hisDelim
         hisLine = hisLine.strip(self._hisDelim)+"\n"
         self._hisObj.write(hisLine)

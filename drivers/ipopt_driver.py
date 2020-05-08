@@ -66,9 +66,7 @@ class IpoptDriver(ParallelEvalDriver):
 
         self._ofval = np.zeros((len(self._objectives),))
         self._eqval = np.zeros((len(self._constraintsEQ),))
-        self._ltval = np.zeros((len(self._constraintsLT),))
         self._gtval = np.zeros((len(self._constraintsGT),))
-        self._inval = np.zeros((len(self._constraintsIN),))
 
         # write the header for the history file
         if self._hisObj is not None:
@@ -77,31 +75,20 @@ class IpoptDriver(ParallelEvalDriver):
                 header += obj.function.getName()+self._hisDelim
             for obj in self._constraintsEQ:
                 header += obj.function.getName()+self._hisDelim
-            for obj in self._constraintsLT:
-                header += obj.function.getName()+self._hisDelim
             for obj in self._constraintsGT:
-                header += obj.function.getName()+self._hisDelim
-            for obj in self._constraintsIN:
                 header += obj.function.getName()+self._hisDelim
             header = header.strip(self._hisDelim)+"\n"
             self._hisObj.write(header)
         #end
 
         # prepare constraint information, the bounds are based on the shifting and scaling
-        self._nCon = len(self._constraintsEQ) + len(self._constraintsLT) +\
-                     len(self._constraintsGT) + len(self._constraintsIN)
+        self._nCon = len(self._constraintsEQ) + len(self._constraintsGT)
 
         conLowerBound = np.zeros([self._nCon,])
         conUpperBound = np.zeros([self._nCon,])
 
         i = len(self._constraintsEQ)
-        conLowerBound[i:(i+len(self._constraintsLT))] = -1e20
-
-        i += len(self._constraintsLT)
         conUpperBound[i:(i+len(self._constraintsGT))] = 1e20
-
-        i += len(self._constraintsGT)
-        conUpperBound[i:(i+len(self._constraintsIN))] = 1.0
 
         # assume row major storage for gradient sparsity
         rg = range(self._nVar * self._nCon)
@@ -163,13 +150,7 @@ class IpoptDriver(ParallelEvalDriver):
         out[i:(i+len(self._constraintsEQ))] = self._eqval
 
         i += len(self._constraintsEQ)
-        out[i:(i+len(self._constraintsLT))] = self._ltval
-
-        i += len(self._constraintsLT)
         out[i:(i+len(self._constraintsGT))] = self._gtval
-
-        i += len(self._constraintsGT)
-        out[i:(i+len(self._constraintsIN))] = self._inval
 
         return out
     #end
@@ -188,8 +169,7 @@ class IpoptDriver(ParallelEvalDriver):
             i = 0
             mask = self._variableStartMask
 
-            for conType in [self._constraintsEQ, self._constraintsLT,\
-                            self._constraintsGT, self._constraintsIN]:
+            for conType in [self._constraintsEQ, self._constraintsGT]:
                 for con in conType:
                     out[i:(i+self._nVar)] = con.function.getGradient(mask) * con.scale / self._varScales
                     i += self._nVar

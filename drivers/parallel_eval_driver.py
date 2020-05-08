@@ -57,9 +57,7 @@ class ParallelEvalDriver(DriverBase):
         #end
         _addEvals(self._objectives   ,valEvals,jacEvals)
         _addEvals(self._constraintsEQ,valEvals,jacEvals)
-        _addEvals(self._constraintsLT,valEvals,jacEvals)
         _addEvals(self._constraintsGT,valEvals,jacEvals)
-        _addEvals(self._constraintsIN,valEvals,jacEvals)
 
         # for each unique evaluation list its direct dependencies
         self._funEvalGraph = dict(zip(valEvals,[set() for i in range(len(valEvals))]))
@@ -78,17 +76,20 @@ class ParallelEvalDriver(DriverBase):
         #end
         _addDependencies(self._objectives   ,self._funEvalGraph,self._jacEvalGraph)
         _addDependencies(self._constraintsEQ,self._funEvalGraph,self._jacEvalGraph)
-        _addDependencies(self._constraintsLT,self._funEvalGraph,self._jacEvalGraph)
         _addDependencies(self._constraintsGT,self._funEvalGraph,self._jacEvalGraph)
-        _addDependencies(self._constraintsIN,self._funEvalGraph,self._jacEvalGraph)
     #end
 
-    # run evaluations extracting maximum parallelism
-    def _evalFunInParallel(self):
-        self._funTime -= time.time()
+    # run the active evaluations of a dependency graph
+    def _evalInParallel(self,dependGraph,active):
         while True:
             allRun = True
-            for evl,depList in self._funEvalGraph.items():
+            for evl,depList in dependGraph.items():
+                if not active[evl]: continue
+
+                # ensure all dependencies are active
+                for dep in depList:
+                    active[dep] = True
+
                 # either running or finished, move on
                 if evl.isIni() or evl.isRun():
                     evl.poll() # (starts or updates internal state)
@@ -108,6 +109,18 @@ class ParallelEvalDriver(DriverBase):
             if allRun: break
             time.sleep(self._waitTime)
         #end
+    #end
+
+    # run evaluations extracting maximum parallelism
+    def _evalFunInParallel(self):
+        self._funTime -= time.time()
+
+        # all function evaluations are active by definition
+        active = dict(zip(self._funEvalGraph.keys(),\
+                          [True for i in range(len(self._funEvalGraph))]))
+
+        self._evalInParallel(self._funEvalGraph, active)
+
         self._funTime += time.time()
     #end
 
@@ -127,49 +140,13 @@ class ParallelEvalDriver(DriverBase):
             for evl in obj.function.getGradientEvalChain():
                 active[evl] = True
 
-        for (obj,f) in zip(self._constraintsLT,self._ltval):
-            if f > 0.0 or not self._asNeeded:
-                for evl in obj.function.getGradientEvalChain():
-                    active[evl] = True
-
         for (obj,f) in zip(self._constraintsGT,self._gtval):
             if f < 0.0 or not self._asNeeded:
                 for evl in obj.function.getGradientEvalChain():
                     active[evl] = True
 
-        for (obj,f) in zip(self._constraintsIN,self._inval):
-            if f > 1.0 or f < 0.0 or not self._asNeeded:
-                for evl in obj.function.getGradientEvalChain():
-                    active[evl] = True
+        self._evalInParallel(self._jacEvalGraph, active)
 
-        while True:
-            allRun = True
-            for evl,depList in self._jacEvalGraph.items():
-                if not active[evl]: continue
-
-                # ensure all dependencies are active
-                for dep in depList:
-                    active[dep] = True
-                
-                # either running or finished, move on
-                if evl.isIni() or evl.isRun():
-                    evl.poll() # (starts or updates internal state)
-                    allRun &= evl.isRun()
-                    continue
-                #end
-                allRun &= evl.isRun()
-
-                # if dependencies are met, start evaluation
-                for dep in depList:
-                    if not dep.isRun(): break
-                else:
-                    evl.initialize()
-                    evl.poll()
-                #end
-            #end
-            if allRun: break
-            time.sleep(self._waitTime)
-        #end
         self._jacTime += time.time()
     #end
 
@@ -202,9 +179,7 @@ class ParallelEvalDriver(DriverBase):
 
         fetchValues(self._ofval, self._objectives)
         fetchValues(self._eqval, self._constraintsEQ)
-        fetchValues(self._ltval, self._constraintsLT)
         fetchValues(self._gtval, self._constraintsGT)
-        fetchValues(self._inval, self._constraintsIN)
 
         self._funTime += time.time()
 
@@ -216,20 +191,12 @@ class ParallelEvalDriver(DriverBase):
             self._ofval[i] *= self._objectives[i].scale
 
         for i in range(self._eqval.size):
-            self._eqval[i] -= self._constraintsEQ[i].bound1
+            self._eqval[i] -= self._constraintsEQ[i].bound
             self._eqval[i] *= self._constraintsEQ[i].scale
 
-        for i in range(self._ltval.size):
-            self._ltval[i] -= self._constraintsLT[i].bound1
-            self._ltval[i] *= self._constraintsLT[i].scale
-
         for i in range(self._gtval.size):
-            self._gtval[i] -= self._constraintsGT[i].bound1
+            self._gtval[i] -= self._constraintsGT[i].bound
             self._gtval[i] *= self._constraintsGT[i].scale
-
-        for i in range(self._inval.size):
-            self._inval[i] -= self._constraintsIN[i].bound1
-            self._inval[i] *= self._constraintsIN[i].scale
 
         self._funReady = True
 

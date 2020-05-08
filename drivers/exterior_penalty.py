@@ -38,9 +38,7 @@ class ExteriorPenaltyDriver(ParallelEvalDriver):
 
         # constraint penalties
         self._eqpen = None
-        self._ltpen = None
         self._gtpen = None
-        self._inpen = None
 
         # gradient vector
         self._grad = None
@@ -60,14 +58,10 @@ class ExteriorPenaltyDriver(ParallelEvalDriver):
 
         self._ofval = np.zeros((len(self._objectives),))
         self._eqval = np.zeros((len(self._constraintsEQ),))
-        self._ltval = np.zeros((len(self._constraintsLT),))
         self._gtval = np.zeros((len(self._constraintsGT),))
-        self._inval = np.zeros((len(self._constraintsIN),))
 
         self._eqpen = np.ones((len(self._constraintsEQ),))*self._rini
-        self._ltpen = np.ones((len(self._constraintsLT),))*self._rini
         self._gtpen = np.ones((len(self._constraintsGT),))*self._rini
-        self._inpen = np.ones((len(self._constraintsIN),))*self._rini
 
         self._grad = np.zeros((self.getNumVariables(),))
         self._old_grad = copy.deepcopy(self._grad)
@@ -84,15 +78,7 @@ class ExteriorPenaltyDriver(ParallelEvalDriver):
                 headerData.append(obj.function.getName(w-1))
                 headerData.append("PEN COEFF")
                 self._logRowFormat += "{:>W.Pg}"*2
-            for obj in self._constraintsLT:
-                headerData.append(obj.function.getName(w-1))
-                headerData.append("PEN COEFF")
-                self._logRowFormat += "{:>W.Pg}"*2
             for obj in self._constraintsGT:
-                headerData.append(obj.function.getName(w-1))
-                headerData.append("PEN COEFF")
-                self._logRowFormat += "{:>W.Pg}"*2
-            for obj in self._constraintsIN:
                 headerData.append(obj.function.getName(w-1))
                 headerData.append("PEN COEFF")
                 self._logRowFormat += "{:>W.Pg}"*2
@@ -112,11 +98,7 @@ class ExteriorPenaltyDriver(ParallelEvalDriver):
                 header += obj.function.getName()+self._hisDelim
             for obj in self._constraintsEQ:
                 header += obj.function.getName()+self._hisDelim
-            for obj in self._constraintsLT:
-                header += obj.function.getName()+self._hisDelim
             for obj in self._constraintsGT:
-                header += obj.function.getName()+self._hisDelim
-            for obj in self._constraintsIN:
                 header += obj.function.getName()+self._hisDelim
             header = header.strip(self._hisDelim)+"\n"
             self._hisObj.write(header)
@@ -134,13 +116,7 @@ class ExteriorPenaltyDriver(ParallelEvalDriver):
         for (g,r) in zip(self._eqval,self._eqpen):
             data.append(g)
             data.append(r)
-        for (g,r) in zip(self._ltval,self._ltpen):
-            data.append(g)
-            data.append(r)
         for (g,r) in zip(self._gtval,self._gtpen):
-            data.append(g)
-            data.append(r)
-        for (g,r) in zip(self._inval,self._inpen):
             data.append(g)
             data.append(r)
         self._logObj.write(self._logRowFormat.format(*data))
@@ -164,9 +140,7 @@ class ExteriorPenaltyDriver(ParallelEvalDriver):
         # combine results
         f  = self._ofval.sum()
         f += (self._eqpen*self._eqval**2).sum()
-        for (g,r) in zip(self._ltval,self._ltpen): f += r*max(0.0,g)*g
         for (g,r) in zip(self._gtval,self._gtpen): f += r*min(0.0,g)*g
-        for (g,r) in zip(self._inval,self._inpen): f += r*(min(0.0,g)+max(1.0,g)-1.0)*g
 
         return f
     #end
@@ -211,16 +185,8 @@ class ExteriorPenaltyDriver(ParallelEvalDriver):
         for (obj,f,r) in zip(self._constraintsEQ,self._eqval,self._eqpen):
             self._grad += 2.0*r*f*obj.function.getGradient(self._variableStartMask)*obj.scale
 
-        for (obj,f,r) in zip(self._constraintsLT,self._ltval,self._ltpen):
-            if f > 0.0:
-                self._grad += 2.0*r*f*obj.function.getGradient(self._variableStartMask)*obj.scale
-
         for (obj,f,r) in zip(self._constraintsGT,self._gtval,self._gtpen):
             if f < 0.0:
-                self._grad += 2.0*r*f*obj.function.getGradient(self._variableStartMask)*obj.scale
-
-        for (obj,f,r) in zip(self._constraintsIN,self._inval,self._inpen):
-            if f > 1.0 or f < 0.0:
                 self._grad += 2.0*r*f*obj.function.getGradient(self._variableStartMask)*obj.scale
 
         self._grad /= self._varScales
@@ -251,14 +217,6 @@ class ExteriorPenaltyDriver(ParallelEvalDriver):
                 self._eqpen[i] = min(self._eqpen[i]*self._cup,self._rmax)
                 self._isFeasible = False
 
-        # upper bound
-        for i in range(self._ltpen.size):
-            if self._ltval[i] > self._tol:
-                self._ltpen[i] = min(self._ltpen[i]*self._cup,self._rmax)
-                self._isFeasible = False
-            elif self._ltval[i] < 0.0:
-                self._ltpen[i] = max(self._ltpen[i]*self._cdown,self._rini)
-
         # lower bound
         for i in range(self._gtpen.size):
             if self._gtval[i] < -self._tol:
@@ -266,14 +224,6 @@ class ExteriorPenaltyDriver(ParallelEvalDriver):
                 self._isFeasible = False
             elif self._gtval[i] > 0.0:
                 self._gtpen[i] = max(self._gtpen[i]*self._cdown,self._rini)
-
-        # range
-        for i in range(self._inpen.size):
-            if self._inval[i] > 1.0+self._tol or self._inval[i] < -self._tol:
-                self._inpen[i] = min(self._inpen[i]*self._cup,self._rmax)
-                self._isFeasible = False
-            elif self._inval[i] < 1.0 and self._inval[i] > 0.0:
-                self._inpen[i] = max(self._inpen[i]*self._cdown,self._rini)
 
         # update the values of the parameters
         if not paramsIfFeasible or self._isFeasible:
