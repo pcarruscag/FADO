@@ -17,6 +17,7 @@
 
 import os
 import time
+import subprocess as sp
 from drivers.base_driver import DriverBase
 
 
@@ -27,9 +28,11 @@ class ParallelEvalDriver(DriverBase):
     def __init__(self, asNeeded = False):
         DriverBase.__init__(self)
 
-        # timers
+        # timers, counters, etc.
         self._funTime = 0
         self._jacTime = 0
+        self._funEval = 0
+        self._jacEval = 0
 
         # variables for parallelization of evaluations
         self._asNeeded = asNeeded
@@ -150,8 +153,19 @@ class ParallelEvalDriver(DriverBase):
         self._jacTime += time.time()
     #end
 
-    # evaluate everything, either in parallel or sequentially, and fetch the function values
-    def _evalAndRetrieveFunctionValues(self):
+    # Evaluate all functions (objectives and constraints), imediately
+    # retrieves and stores the results after shifting and scaling.
+    def _evaluateFunctions(self, x):
+        self._handleVariableChange(x)
+
+        # lazy evaluation
+        if self._funReady: return False
+
+        if self._userPreProcessFun:
+            os.chdir(self._userDir)
+            sp.call(self._userPreProcessFun,shell=True)
+        #end
+
         os.chdir(self._workDir)
 
         if self._parallelEval:
@@ -201,6 +215,37 @@ class ParallelEvalDriver(DriverBase):
         self._funReady = True
 
         os.chdir(self._userDir)
+
+        return True
+    #end
+
+    # Evaluates all gradients in parallel execution mode, otherwise
+    # it only runs the user preprocessing and the execution takes place
+    # when the results are read in "function.getGradient".
+    def _evaluateGradients(self, x):
+        # we assume that evaluating the gradients requires the functions
+        self._evaluateFunctions(x)        
+
+        # lazy evaluation
+        if self._jacReady: return False
+
+        if self._userPreProcessGrad:
+            os.chdir(self._userDir)
+            sp.call(self._userPreProcessGrad,shell=True)
+        #end
+
+        os.chdir(self._workDir)
+
+        # evaluate everything, either in parallel or sequentially,
+        # in the latter case the evaluations occur when retrieving the values
+        if self._parallelEval: self._evalJacInParallel()
+
+        os.chdir(self._userDir)
+
+        self._jacEval += 1
+        self._jacReady = True
+
+        return True
     #end
 #end
 

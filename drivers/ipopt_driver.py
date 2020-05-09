@@ -19,70 +19,26 @@ import os
 import time
 import numpy as np
 import ipyopt as opt
-import subprocess as sp
-from drivers.parallel_eval_driver import ParallelEvalDriver
+from drivers.constrained_optim_driver import ConstrainedOptimizationDriver
 
 
 # Wrapper to use with the Ipopt optimizer via IPyOpt.
-class IpoptDriver(ParallelEvalDriver):
+class IpoptDriver(ConstrainedOptimizationDriver):
     def __init__(self):
-        ParallelEvalDriver.__init__(self)
-
-        # counters, flags, sizes...
-        self._funEval = 0
-        self._jacEval = 0
-        self._nCon = 0
+        ConstrainedOptimizationDriver.__init__(self)
 
         # sparse indices of the constraint gradient, for now assumed to be dense
         self._sparseIndices = None
 
         # the optimization problem
         self._nlp = None
-
-        # old values of the gradients, as fallback in case of evaluation failure
-        self._old_grad_f = None
-        self._old_jac_g = None
-    #end
-
-    # Update the problem parameters (triggers new evaluations).
-    def update(self):
-        for par in self._parameters: par.increment()
-
-        self._x[()] = 1e20
-        self._funReady = False
-        self._jacReady = False
-        self._resetAllValueEvaluations()
-        self._resetAllGradientEvaluations()
-
-        if self._hisObj is not None:
-            self._hisObj.write("Parameter update.\n")
     #end
 
     # Prepares and returns the optimization problem for Ipopt.
     # For convenience also does other preprocessing, all functions must be set before calling this method.
     # Do not destroy the driver after obtaining the problem.
     def getNLP(self):
-        self.preprocessVariables()
-
-        self._ofval = np.zeros((len(self._objectives),))
-        self._eqval = np.zeros((len(self._constraintsEQ),))
-        self._gtval = np.zeros((len(self._constraintsGT),))
-
-        # write the header for the history file
-        if self._hisObj is not None:
-            header = "ITER"+self._hisDelim
-            for obj in self._objectives:
-                header += obj.function.getName()+self._hisDelim
-            for obj in self._constraintsEQ:
-                header += obj.function.getName()+self._hisDelim
-            for obj in self._constraintsGT:
-                header += obj.function.getName()+self._hisDelim
-            header = header.strip(self._hisDelim)+"\n"
-            self._hisObj.write(header)
-        #end
-
-        # prepare constraint information, the bounds are based on the shifting and scaling
-        self._nCon = len(self._constraintsEQ) + len(self._constraintsGT)
+        ConstrainedOptimizationDriver.preprocess(self)
 
         conLowerBound = np.zeros([self._nCon,])
         conUpperBound = np.zeros([self._nCon,])
@@ -115,7 +71,6 @@ class IpoptDriver(ParallelEvalDriver):
         assert out.size >= self._nVar, "Wrong size of gradient vector (\"out\")."
 
         self._jacTime -= time.time()
-
         try:
             self._evaluateGradients(x)
 
@@ -160,7 +115,6 @@ class IpoptDriver(ParallelEvalDriver):
         assert out.size >= self._nCon*self._nVar, "Wrong size of constraint Jacobian vector (\"out\")."
 
         self._jacTime -= time.time()
-
         try:
             self._evaluateGradients(x)
 
@@ -188,49 +142,6 @@ class IpoptDriver(ParallelEvalDriver):
         os.chdir(self._userDir)
 
         return out
-    #end
-
-    # Evaluate all functions (objectives and constraints), imediately
-    # retrieves and stores the results after shifting and scaling.
-    def _evaluateFunctions(self, x):
-        self._handleVariableChange(x)
-
-        # lazy evaluation
-        if self._funReady: return
-
-        if self._userPreProcessFun:
-            os.chdir(self._userDir)
-            sp.call(self._userPreProcessFun,shell=True)
-        #end
-
-        self._evalAndRetrieveFunctionValues()
-    #end
-
-    # Evaluates all gradients in parallel execution mode, otherwise
-    # it only runs the user preprocessing and the execution takes place
-    # when the results are read in "_eval_grad_f" or in "_eval_jac_g".
-    def _evaluateGradients(self, x):
-        # we assume that evaluating the gradients requires the functions
-        self._evaluateFunctions(x)        
-
-        # lazy evaluation
-        if self._jacReady: return
-
-        if self._userPreProcessGrad:
-            os.chdir(self._userDir)
-            sp.call(self._userPreProcessGrad,shell=True)
-        #end
-
-        os.chdir(self._workDir)
-
-        # evaluate everything, either in parallel or sequentially,
-        # in the latter case the evaluations occur when retrieving the values
-        if self._parallelEval: self._evalJacInParallel()
-
-        os.chdir(self._userDir)
-
-        self._jacEval += 1
-        self._jacReady = True
     #end
 #end
 

@@ -19,7 +19,6 @@ import os
 import time
 import copy
 import numpy as np
-import subprocess as sp
 from drivers.parallel_eval_driver import ParallelEvalDriver
 
 
@@ -123,19 +122,8 @@ class ExteriorPenaltyDriver(ParallelEvalDriver):
     #end        
 
     def fun(self,x):
-        self._handleVariableChange(x)
-
-        # lazy evaluation
-        if not self._funReady:
-            self._initialize()
-
-            if self._userPreProcessFun:
-                os.chdir(self._userDir)
-                sp.call(self._userPreProcessFun,shell=True)
-            #end
-
-            self._evalAndRetrieveFunctionValues()
-        #end
+        self._initialize()
+        self._evaluateFunctions(x)
 
         # combine results
         f  = self._ofval.sum()
@@ -155,27 +143,16 @@ class ExteriorPenaltyDriver(ParallelEvalDriver):
         #end
     #end
 
+    # this method decorates the parent method by combining the gradient
     def _evaluateGradients(self,x):
-        # we assume that evaluating the gradients requires the functions
-        self.fun(x)        
+        self._initialize()
 
-        # lazy evaluation
-        if self._jacReady: return
-
-        if self._userPreProcessGrad:
-            os.chdir(self._userDir)
-            sp.call(self._userPreProcessGrad,shell=True)
-        #end
-
-        os.chdir(self._workDir)
-
-        # initializing and updating values was done when evaluating the function
-
-        if self._parallelEval: self._evalJacInParallel()
+        # if nothing is evaluated return without doing more work
+        if not ParallelEvalDriver._evaluateGradients(self,x): return
 
         # evaluate all required gradients (skip those where the constraint is not active)
-        self._jacEval += 1
         self._jacTime -= time.time()
+        os.chdir(self._workDir)
 
         self._grad[()] = 0.0
 
@@ -192,18 +169,14 @@ class ExteriorPenaltyDriver(ParallelEvalDriver):
         self._grad /= self._varScales
 
         self._jacTime += time.time()
+        os.chdir(self._userDir)
 
         # update penalties and params (evaluating the gradient concludes an outer iteration)
         if self._freq > 0:
             if self._jacEval % self._freq is 0: self.update()
 
-        self._resetAllGradientEvaluations()
-        os.chdir(self._userDir)
-
         # make copy to use as fallback
         self._old_grad[()] = self._grad
-
-        self._jacReady = True
     #end
 
     # if the constraint is active and above tolerance increase the penalty

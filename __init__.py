@@ -9,6 +9,7 @@ from tools import TableWriter
 from tools import BoundConstraints
 from tools import GradientScale
 from drivers import ExteriorPenaltyDriver
+from drivers import ScipyDriver
 try: from drivers import IpoptDriver
 except: pass
 from optimizers import goldenSection
