@@ -119,8 +119,7 @@ class ParallelEvalDriver(DriverBase):
         self._funTime -= time.time()
 
         # all function evaluations are active by definition
-        active = dict(zip(self._funEvalGraph.keys(),\
-                          [True for i in range(len(self._funEvalGraph))]))
+        active = dict(zip(self._funEvalGraph.keys(), [True]*len(self._funEvalGraph)))
 
         self._evalInParallel(self._funEvalGraph, active)
 
@@ -132,8 +131,7 @@ class ParallelEvalDriver(DriverBase):
         self._jacTime -= time.time()
 
         # determine what evaluations are active based on functions
-        active = dict(zip(self._jacEvalGraph.keys(),\
-                          [False for i in range(len(self._jacEvalGraph))]))
+        active = dict(zip(self._jacEvalGraph.keys(), [False]*len(self._jacEvalGraph)))
 
         for obj in self._objectives:
             for evl in obj.function.getGradientEvalChain():
@@ -179,12 +177,12 @@ class ParallelEvalDriver(DriverBase):
         self._funTime -= time.time()
 
         def fetchValues(dst, src):
-            for i in range(dst.size):
+            for i, obj in enumerate(src):
                 try:
-                    dst[i] = src[i].function.getValue()
+                    dst[i] = obj.function.getValue()
                 except:
-                    if src[i].function.hasDefaultValue() and self._failureMode is "SOFT":
-                        dst[i] = src[i].function.getDefaultValue()
+                    if obj.function.hasDefaultValue() and self._failureMode is "SOFT":
+                        dst[i] = obj.function.getDefaultValue()
                     else:
                         raise
                 #end
@@ -201,16 +199,14 @@ class ParallelEvalDriver(DriverBase):
         self._writeHisLine()
 
         # shift constraints and scale as required
-        for i in range(self._ofval.size):
-            self._ofval[i] *= self._objectives[i].scale
+        for i, obj in enumerate(self._objectives):
+            self._ofval[i] *= obj.scale
 
-        for i in range(self._eqval.size):
-            self._eqval[i] -= self._constraintsEQ[i].bound
-            self._eqval[i] *= self._constraintsEQ[i].scale
+        for i, obj in enumerate(self._constraintsEQ):
+            self._eqval[i] = (self._eqval[i] - obj.bound) * obj.scale
 
-        for i in range(self._gtval.size):
-            self._gtval[i] -= self._constraintsGT[i].bound
-            self._gtval[i] *= self._constraintsGT[i].scale
+        for i, obj in enumerate(self._constraintsGT):
+            self._gtval[i] = (self._gtval[i] - obj.bound) * obj.scale
 
         self._funReady = True
 

@@ -107,8 +107,8 @@ class PreStringHandler:
             value = [value]
 
         newLine = ""
-        for i in range(len(lines)):
-            if lines[i].startswith(self._label):
+        for i, line in enumerate(lines):
+            if line.startswith(self._label):
                 if not newLine:
                     newLine += self._label
                     for val in value:
