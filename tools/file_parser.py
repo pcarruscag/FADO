@@ -24,21 +24,19 @@ class LabelReplacer:
         self._label = label
 
     def write(self,file,value):
-        fid = open(file,"r")
-        lines = fid.readlines()
-        fid.close()
+        with open(file) as f:
+            lines = f.readlines()
 
         if isinstance(value,np.ndarray): value = value[0]
 
-        newlines = []
+        newLines = []
         for line in lines:
-            newlines.append(line.replace(self._label,str(value)))
+            newLines.append(line.replace(self._label,str(value)))
         #end
 
-        fid = open(file,"w")
-        fid.writelines(newlines)
-        fid.close()
-    #end
+        with open(file,"w") as f:
+            f.writelines(newLines)
+     #end
 #end
 
 
@@ -49,23 +47,21 @@ class ArrayLabelReplacer:
         self._delim = delim
 
     def write(self,file,value):
-        fid = open(file,"r")
-        lines = fid.readlines()
-        fid.close()
+        with open(file) as f:
+            lines = f.readlines()
 
         valueStr = ""
         for v in value:
             valueStr += str(v)+self._delim
         valueStr = valueStr.strip(self._delim)
 
-        newlines = []
+        newLines = []
         for line in lines:
-            newlines.append(line.replace(self._label,valueStr))
+            newLines.append(line.replace(self._label,valueStr))
         #end
 
-        fid = open(file,"w")
-        fid.writelines(newlines)
-        fid.close()
+        with open(file,"w") as f:
+            f.writelines(newLines)
     #end
 #end
 
@@ -77,9 +73,8 @@ class PreStringHandler:
         self._delim = delim
 
     def read(self,file):
-        fid = open(file,"r")
-        lines = fid.readlines()
-        fid.close()
+        with open(file) as f:
+            lines = f.readlines()
 
         for line in lines:
             if line.startswith(self._label):
@@ -98,9 +93,8 @@ class PreStringHandler:
     #end
 
     def write(self,file,value):
-        fid = open(file,"r")
-        lines = fid.readlines()
-        fid.close()
+        with open(file) as f:
+            lines = f.readlines()
 
         # make scalars iterable
         if isinstance(value,float) or isinstance(value,int):
@@ -119,9 +113,8 @@ class PreStringHandler:
             #end
         #end
 
-        fid = open(file,"w")
-        fid.writelines(lines)
-        fid.close()
+        with open(file,"w") as f:
+            f.writelines(lines)
     #end
 #end
 
@@ -137,9 +130,8 @@ class TableReader:
         self._delim = delim
 
     def read(self,file):
-        fid = open(file,"r")
-        lines = fid.readlines()
-        fid.close()
+        with open(file) as f:
+            lines = f.readlines()
 
         # skip header and footer rows
         lines = lines[self._start[0]:self._end[0]]
@@ -148,7 +140,7 @@ class TableReader:
         # process lines
         data = None
         numCol = 0
-        for (line,row) in zip(lines,range(numRow)):
+        for row, line in enumerate(lines):
             for char in self._delim:
                 line = line.replace(char," ")
 
@@ -192,9 +184,8 @@ class TableWriter:
 
     def write(self,file,values):
         # load file
-        fid = open(file,"r")
-        lines = fid.readlines()
-        fid.close()
+        with open(file) as f:
+            lines = f.readlines()
 
         # check if the values are remotely compatible with the file
         if len(lines) < values.shape[0]: return # "soft fail"
@@ -242,8 +233,9 @@ class TableWriter:
         #end
 
         # write file
-        fid = open(file,"w")
-        fid.writelines(newLines+footerLines)
-        fid.close()
+        with open(file,"w") as f:
+            f.writelines(newLines)
+            f.writelines(footerLines)
     #end
 #end
+
