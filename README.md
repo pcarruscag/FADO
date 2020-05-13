@@ -19,19 +19,20 @@ The design of the framework is centered around large scale applications (10k+ va
 ## Abstractions
 From the top down (and not a replacement for the docs):
 
-- **Driver**: The class of objects eventually passed to an optimizer to wrap the execution steps required to evaluate functions and their gradients, a driver is therefore composed of "functions". Different applications benefit from drivers with different characteristics, for example the ExteriorPenaltyDriver can evaluate all its functions simultaneously.
+- **Driver**: The class of objects used to wrap the execution steps required to evaluate functions and their gradients in a way that conforms to the interface of particular optimizers. Drivers can evaluate all their functions simultaneously (i.e. in parallel).
 - **Function**: An entity with one scalar output and any number of input "variables". Functions are further defined by the steps ("evaluations") required to obtain their value and possibly their gradient.
 - **Variable**: The scalar or vector inputs of functions that are exposed to the optimizers.
 - **Evaluation**: These wrap the calls to the external codes, they are configured with the input and data files, and the instructions, required to execute the code. "Parameters" can be associated with evaluations to introduce small changes to the input files (e.g. change a boundary condition in a multipoint optimization).
 - **Parameter**: A numeric or text variable that is not exposed to the optimizer, they are useful to introduce small modifications to the input files to make a small number of template input files applicable to as many evaluations as possible.
 
-**Note**: The calls to external codes from "Evaluations" are made with `subprocess.call(..., shell=True)`, don't run optimizations as root, or in system directories, etc.
+**Note**: The calls to external codes from `FADO.ExternalRun` evaluations are made with `subprocess.call(..., shell=True)`, don't run optimizations as root, or in system directories, etc.
 
 ## Interfacing with files
 Function, Variable, and Parameter need ways to be written and read to or from files.
-Any object implementing write(file,values) or read(file) -> values can be used, five classes are provided that should cover most scenarios:
+Any object implementing `write(file,values)` and/or `read(file) -> values` can be used, five classes are provided that should cover most scenarios:
 
-- **LabelReplacer**: Replaces any occurrence of a label (a string) with the value of a scalar variable or parameter, **ArrayLabelReplacer** does the same for array-like values.
+- **LabelReplacer**: Replaces any occurrence of a label (a string) with the value of a scalar variable or parameter.
+- **ArrayLabelReplacer**: Does the same for array-like values.
 - **PreStringHandler**: Reads(writes) a list of values separated by a configurable delimiter from(in) front of a label defining the start of a line (i.e. the line must start with the label).
 - **TableReader/Writer**: Reads or writes to a section of a delimited table, rows outside of the table range do not need to be in table format, but those inside are expected to have the same number of columns, the examples should make it clear how to use these classes.
 
@@ -46,7 +47,7 @@ To use the IpoptDriver you need [IPyOpt](https://github.com/g-braeunlich/IPyOpt)
 
 ## Usage
 Have a look at the examples, "example" is a contrived example using the Rosenbrock function, the others are realistic uses of [SU2](https://su2code.github.io/).
-All the important classes and methods have Python documentation strings (e.g. `print(TableReader.__doc__)`).
+All the important classes and methods have Python documentation strings (e.g. `print(FADO.TableReader.__doc__)`).
 
 ## License
 [LGPL-3.0](https://www.gnu.org/licenses/lgpl-3.0.html)
