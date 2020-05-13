@@ -41,10 +41,12 @@ Make the parent directory ("../") and FADO's ("./") reachable to Python, usually
 ## Dependencies
 Hard dependency on NumPy, ndarrays are used throughout the code.
 The ExteriorPenaltyDriver was designed around the SciPy.optimize interface, but a simple implementation of the Fletcher-Reeves method is available (see example2_SU2).
+The ScipyDriver was designed with the constrained optimization methods in mind (especially SLSQP) but does not strictly require Scipy to be used.
 To use the IpoptDriver you need [IPyOpt](https://github.com/g-braeunlich/IPyOpt) and [Ipopt](https://github.com/coin-or/Ipopt), the latter can be installed with apt-get.
 
 ## Usage
 Have a look at the examples, "example" is a contrived example using the Rosenbrock function, the others are realistic uses of [SU2](https://su2code.github.io/).
+All the important classes and methods have Python documentation strings.
 
 ## License
 [LGPL-3.0](https://www.gnu.org/licenses/lgpl-3.0.html)
