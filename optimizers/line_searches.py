@@ -16,8 +16,8 @@
 #  along with FADO.  If not, see <https://www.gnu.org/licenses/>.
 
 
-# 1D minimization using the Golden Section method
 def goldenSection(fun,maxiter,f0=None,lbd0=1,tol=1e-3):
+    """1D minimization using the Golden Section method."""
     # look for an interval that contains the minimum
     # assuming we have a descent direction
     feval = 0
@@ -82,8 +82,8 @@ def goldenSection(fun,maxiter,f0=None,lbd0=1,tol=1e-3):
 #end
 
 
-# 1D minimization using the Quadratic Interpolation method
 def quadraticInterp(fun,maxiter,f0=None,lbd0=1,tol=1e-3):
+    """1D minimization using the Quadratic Interpolation method."""
     # initialize
     feval = 0
     x = [0.0, 0.0, 0.0]

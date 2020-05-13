@@ -22,8 +22,21 @@ import numpy as np
 from drivers.parallel_eval_driver import ParallelEvalDriver
 
 
-# Exterior Penalty method wrapper
 class ExteriorPenaltyDriver(ParallelEvalDriver):
+    """
+    Exterior Penalty method wrapper, exposes a penalized function and its gradient
+    to an optimizer via methods fun(x) and grad(x).
+    Implements the logic to ramp up/down the penalty factors for each constraint.
+
+    Parameters
+    ----------
+    tol         : Constraint violation tolerance.
+    freq        : Frequency for auto updating the penalty factors, 0 disables auto update.
+    rini        : Initial penalty factor.
+    rmax        : Maximum penalty factor.
+    factorUp    : Multiplicative increase rate for penalties of constraints out of tolerance.
+    factorDown  : Multiplicative decrease rate for penalties of inactive constraints.
+    """
     def __init__(self, tol, freq=40, rini=8, rmax=1024, factorUp=4, factorDown=0.5):
         ParallelEvalDriver.__init__(self, True)
         
@@ -50,6 +63,10 @@ class ExteriorPenaltyDriver(ParallelEvalDriver):
         self._isFeasible = False
         self._logRowFormat = ""
     #end
+
+    def preprocessVariables(self):
+        """Setup method that must be called after all functions are added to the driver."""
+        self._preprocessVariables()
 
     # method for lazy initialization
     def _initialize(self):
@@ -122,6 +139,7 @@ class ExteriorPenaltyDriver(ParallelEvalDriver):
     #end        
 
     def fun(self,x):
+        """Evaluate the penalized function at "x"."""
         self._initialize()
         self._evaluateFunctions(x)
 
@@ -134,6 +152,7 @@ class ExteriorPenaltyDriver(ParallelEvalDriver):
     #end
 
     def grad(self,x):
+        """Evaluate the gradient of the penalized function at "x"."""
         try:
             self._evaluateGradients(x)
             return self._grad
@@ -179,9 +198,13 @@ class ExteriorPenaltyDriver(ParallelEvalDriver):
         self._old_grad[()] = self._grad
     #end
 
-    # if the constraint is active and above tolerance increase the penalty
-    # otherwise decrease (minimum and maximum are constrained)
     def update(self,paramsIfFeasible=False):
+        """
+        If a constraint is active and above tolerance increase the penalties, otherwise decrease them
+        (minimum and maximum are constrained).
+        Increment all Parameters associated with the Functions of the problem (via the evaluation steps).
+        If paramsIfFeasible=True the Parameter update only takes place if the current design is feasible.
+        """
         self._isFeasible = True
 
         # equality (always active)
@@ -215,6 +238,7 @@ class ExteriorPenaltyDriver(ParallelEvalDriver):
     #end
 
     def feasibleDesign(self):
+        """Return True if all constraints meet the tolerance."""
         return self._isFeasible
 #end
 

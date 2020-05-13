@@ -21,9 +21,10 @@ import numpy as np
 from drivers.parallel_eval_driver import ParallelEvalDriver
 
 
-# Intermediate class to define common methods between the other
-# constrained optimization drivers.
 class ConstrainedOptimizationDriver(ParallelEvalDriver):
+    """
+    Intermediate class to define common methods between the other constrained optimization drivers.
+    """
     def __init__(self):
         ParallelEvalDriver.__init__(self)
 
@@ -41,8 +42,8 @@ class ConstrainedOptimizationDriver(ParallelEvalDriver):
         self._old_jac_g = None
     #end
 
-    # Update the problem parameters (triggers new evaluations).
     def update(self):
+        """Update the problem parameters (triggers new evaluations)."""
         for par in self._parameters: par.increment()
 
         self._x[()] = 1e20
@@ -55,10 +56,9 @@ class ConstrainedOptimizationDriver(ParallelEvalDriver):
             self._hisObj.write("Parameter update.\n")
     #end
 
-    # Prepares the optimization problem, including preprocessing variables,
-    # and setting up the lists of constraints and variables
     def preprocess(self):
-        self.preprocessVariables()
+        """Prepares the optimization problem."""
+        self._preprocessVariables()
 
         self._ofval = np.zeros((len(self._objectives),))
         self._eqval = np.zeros((len(self._constraintsEQ),))

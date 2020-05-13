@@ -19,11 +19,23 @@ import copy
 import numpy as np
 
 
-# Class for design variables
 class InputVariable:
-    # parser specifies how the variable is written to file
-    # size >= 1 defines a vector variable whose x0, lb, and ub values are broadcast
-    # size == 0 means auto, size determined from x0, lb/ub must be compatible or scalar
+    """    
+    Class to define design variables.
+
+    Parameters
+    ----------
+    x0 is the initial value.
+    parser specifies how the variable is written to file.
+    size >= 1 defines a vector variable whose x0, lb, and ub values are broadcast.
+    size == 0 means auto, i.e. size determined from x0, scale/lb/ub must be either compatible or scalar.
+    scale, an optimizer will see x/lb/ub * scale
+    lb/ub, the lower and upper bounds for the variable.
+
+    See also
+    --------
+    Parameter, a variable-like object that is not exposed to optimizers.
+    """
     def __init__(self, x0, parser, size=0, scale=1.0, lb=-1E20, ub=1E20):
         self._parser = parser
 
@@ -115,10 +127,18 @@ class InputVariable:
 #end
 
 
-# Class for parameters
 class Parameter:
-    # values is an indexable structure (e.g. range, list)
-    # function can be used to further convert the current value
+    """
+    Class for optimization parameters, usually some value that is not an optimization
+    variable but needs to be ramped over its course, e.g. a penalty factor.
+
+    Parameters
+    ----------
+    values   : An indexable structure (e.g. range, list).
+    parser   : How the values are written to file.
+    start    : Initial index into values.
+    function : Can be used to further convert the current value.
+    """
     def __init__(self,values,parser,start=0,function=None):
         self._values = values
         self._parser = parser
@@ -127,12 +147,13 @@ class Parameter:
         self._upper = len(values)-1
         self._index = max(0,min(self._upper,start))
 
-    # inc/dec-menting returns true at the bounds
     def increment(self):
+        """Move to the next value, return True if the last value was reached."""
         self._index = max(0,min(self._upper,self._index+1))
         return self.isAtTop()
 
     def decrement(self):
+        """Move to the previous value, return True if the first value was reached."""
         self._index = max(0,min(self._upper,self._index-1))
         return self.isAtBottom()
 
@@ -143,8 +164,10 @@ class Parameter:
         self._parser.write(file,value)
 
     def isAtTop(self):
+        """Return True if the current value is the last."""
         return (self._index == self._upper)
 
     def isAtBottom(self):
+        """Return True if the current value is the first."""
         return (self._index == 0)
 #end

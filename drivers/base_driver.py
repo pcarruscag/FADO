@@ -20,9 +20,8 @@ import shutil
 import numpy as np
 
 
-# Base class for optimization drivers
-# Implements the setup interface
 class DriverBase:
+    """Base class for optimization drivers, implements the basic setup interface."""
 
     # "structs" to store objective and constraint information
     class _Objective:
@@ -86,39 +85,59 @@ class DriverBase:
     #end
 
     def addObjective(self,type,function,scale=1.0,weight=1.0):
+        """
+        Add an objective function to the optimization problem.
+
+        Parameters
+        ----------
+        type      : "min" or "max" for minimization or maximization.
+        function  : A function object.
+        scale     : Scale applied to the function, optimizer will see function*scale.
+        weight    : Weight given to the objective, only relevant for multiple objectives.
+        """
         self._objectives.append(self._Objective(type,function,scale,weight))
 
     def addEquality(self,function,target=0.0,scale=1.0):
+        """
+        Add an equality constraint, function = target, the optimizer will see (function-target)*scale.
+        """
         if scale <= 0.0: raise ValueError("Scale must be positive.")
         self._constraintsEQ.append(self._Constraint(function,scale,target))
 
     def addLowerBound(self,function,bound=0.0,scale=1.0):
+        """Add a lower bound inequality constraint."""
         if scale <= 0.0: raise ValueError("Scale must be positive.")
         self._constraintsGT.append(self._Constraint(function,scale,bound))
 
     def addUpperBound(self,function,bound=0.0,scale=1.0):
+        """Add an upper bound inequality constraint."""
         if scale <= 0.0: raise ValueError("Scale must be positive.")
         self._constraintsGT.append(self._Constraint(function,-1*scale,bound))
 
     def addUpLowBound(self,function,lower=-1.0,upper=1.0):
+        """Add a range constraint, this is converted into lower/upper bounds."""
         if lower >= upper: raise ValueError("Upper bound must be greater than lower bound.")
         scale = 1.0/(upper-lower)
         self._constraintsGT.append(self._Constraint(function,scale,lower))
         self._constraintsGT.append(self._Constraint(function,-1*scale,upper))
 
     def setWorkingDirectory(self,dir):
+        """Set the name of the working directory where each iteration runs, it should not exist."""
         self._workDir = dir
 
     def getNumVariables(self):
+        """Returns the size of the design vector."""
         N=0
         for var in self._variables: N+=var.getSize()
         return N
 
     def setLogger(self,obj,width=13):
+        """Attach a log file object to the driver."""
         self._logObj = obj
         self._logColWidth = width
 
     def setHistorian(self,obj,delim=",  "):
+        """Attach a history file object to the driver, function values printed every iteration."""
         self._hisObj = obj
         self._hisDelim = delim
 
@@ -136,12 +155,15 @@ class DriverBase:
     #end
 
     def getInitial(self):
+        """Returns the initial design vector."""
         return self._getConcatenatedVector("Initial")*self._varScales
 
     def getLowerBound(self):
+        """Returns the lower bounds of the variables."""
         return self._getConcatenatedVector("LowerBound")*self._varScales
 
     def getUpperBound(self):
+        """Returns the upper bounds of the variables."""
         return self._getConcatenatedVector("UpperBound")*self._varScales
 
     # update design variables with the design vector from the optimizer
@@ -170,7 +192,7 @@ class DriverBase:
     #end
 
     # build variable and parameter vectors from function data
-    def preprocessVariables(self):
+    def _preprocessVariables(self):
         # build ordered non duplicated lists of variables and parameters
         self._variables = []
         self._parameters = []
@@ -195,10 +217,23 @@ class DriverBase:
     #end
 
     def setStorageMode(self,keepDesigns=False,dirPrefix="DSN_"):
+        """
+        Set whether to keep or discard (default) old optimization iterations.
+
+        Parameters
+        ----------
+        keepDesigns : True to keep all designs.
+        dirPrefix   : Prefix used to name folders with old designs.
+        """
         self._keepDesigns = keepDesigns
         self._dirPrefix = dirPrefix
 
     def setFailureMode(self,mode):
+        """
+        Set the failure behavior, for "HARD" (default) an exeption is throw if function evaluations fail,
+        for "SOFT" the driver catches exceptions and uses default function values (if they have them).
+        The "SOFT" mode is useful if the optimizer does not handle exceptions.
+        """
         assert mode is "HARD" or mode is "SOFT", "Mode must be either \"HARD\" (exceptions) or \"SOFT\" (default function values)."
         self._failureMode = mode
 

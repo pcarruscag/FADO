@@ -22,8 +22,10 @@ import ipyopt as opt
 from drivers.constrained_optim_driver import ConstrainedOptimizationDriver
 
 
-# Wrapper to use with the Ipopt optimizer via IPyOpt.
 class IpoptDriver(ConstrainedOptimizationDriver):
+    """
+    Driver to use with the Ipopt optimizer via IPyOpt.
+    """
     def __init__(self):
         ConstrainedOptimizationDriver.__init__(self)
 
@@ -34,10 +36,12 @@ class IpoptDriver(ConstrainedOptimizationDriver):
         self._nlp = None
     #end
 
-    # Prepares and returns the optimization problem for Ipopt.
-    # For convenience also does other preprocessing, all functions must be set before calling this method.
-    # Do not destroy the driver after obtaining the problem.
     def getNLP(self):
+        """
+        Prepares and returns the optimization problem for Ipopt (an instance of ipyopt.Problem).
+        For convenience also does other preprocessing, must be called after all functions are set.
+        Do not destroy the driver after obtaining the problem.
+        """
         ConstrainedOptimizationDriver.preprocess(self)
 
         conLowerBound = np.zeros([self._nCon,])

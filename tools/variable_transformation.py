@@ -18,9 +18,12 @@
 import numpy as np
 
 
-# Create a parameterization that respects bound constraints on variables
-# x=0 : x'=lb, x=pi/2 : x'=ub
 class BoundConstraints:
+    """
+    Creates a parameterization that respects bound constraints on variables.
+    Wraps function and gradient callables and clamps (via raised cosine transform)
+    the inputs in calls to those objects to the range [lb, ub].
+    """
     def __init__(self,fun,grad,lb,ub):
         self._fun = fun
         self._grad = grad
@@ -31,6 +34,7 @@ class BoundConstraints:
     #end
 
     def __call__(self,x):
+        # y=0 : x=lb, y=pi/2 : x=ub
         self._y = 0.5*np.pi*(x-self._lb)/self._range
         self._partials = 0.5*np.pi*np.sin(2.0*self._y)
         return self._lb+self._range*np.sin(self._y)**2.0
@@ -51,8 +55,11 @@ class BoundConstraints:
 #end
 
 
-# Scale gradient without scaling variables
 class GradientScale:
+    """
+    Applies an inconsistent scaling to a gradient (i.e. without
+    scaling also the variables and/or the function).
+    """
     def __init__(self,grad,scale):
         self._grad = grad
         self._scale = scale

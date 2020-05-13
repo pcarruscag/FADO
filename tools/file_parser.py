@@ -18,8 +18,15 @@
 import numpy as np
 
 
-# Replace text labels by values
 class LabelReplacer:
+    """
+    Replaces all occurrences of a text label (passed to __init__) by value.
+    Values may be numeric or strings, only the first index of arrays is written.
+
+    See also
+    --------
+    ArrayLabelReplacer, to write entire arrays.
+    """
     def __init__(self,label):
         self._label = label
 
@@ -40,8 +47,15 @@ class LabelReplacer:
 #end
 
 
-# Replace text labels by arrays of values
 class ArrayLabelReplacer:
+    """
+    Replaces all occurrences of a text label (passed to __init__) by an iterable value.
+    The different entries of value are joined by the delimiter passed to __init__.
+
+    See also
+    --------
+    LabelReplacer, to write scalar numeric values or text.
+    """
     def __init__(self,label,delim=","):
         self._label = label
         self._delim = delim
@@ -66,8 +80,18 @@ class ArrayLabelReplacer:
 #end
 
 
-# Read or write "delim"-separated values in front of a label (pre-string)
 class PreStringHandler:
+    """
+    Read or write "delim"-separated values in front of a label (prefix-string),
+    which must start the line. Both label and delimiter are passed to __init__.
+    When reading the class can only handle the first occurrence of the label,
+    when writing every occurence will be handled.
+
+    Example
+    -------
+    X= 1, 2, 3
+    PreStringHandler("X=") -> [1, 2, 3]
+    """
     def __init__(self,label,delim=","):
         self._label = label
         self._delim = delim
@@ -79,6 +103,7 @@ class PreStringHandler:
         for line in lines:
             if line.startswith(self._label):
                 data = line.lstrip(self._label).strip().split(self._delim)
+                break
             #end
         #end
 
@@ -88,7 +113,7 @@ class PreStringHandler:
         value = np.ndarray((size,))
         for i in range(size):
             value[i] = float(data[i])
-        
+
         return value
     #end
 
@@ -119,9 +144,26 @@ class PreStringHandler:
 #end
 
 
-# Read from a table-like file
 class TableReader:
-    # use row/col=None to return entire columns/rows, and -1 for "last"
+    """
+    Reads data (up to 2D arrays) from a table-like file, e.g. CSV.
+
+    Parameters
+    ----------
+    row     : Row of the table defined by start and end (use None for all rows, -1 for last row).
+    col     : Column (same behavior as row).
+    start   : Row and column (tuple) of the file defining the top left corner of the table.
+    end     : Tuple defining the bottom right corner of the table (use None to capture everything).
+    delim   : The delimiter used to separate columns.
+
+    Example
+    -------
+    col1 col2 col3
+    0    1    2
+    3    4    5
+    >>> TableReader(1,1,(1,1),(None,None)) -> 5
+    >>> TableReader(0,None,(1,0),(2,None)) -> [0, 1, 2]
+    """
     def __init__(self,row=0,col=0,start=(0,0),end=(None,None),delim=""):
         self._row = row
         self._col = col
@@ -174,8 +216,21 @@ class TableReader:
 #end
 
 
-# Write to a table-like file
 class TableWriter:
+    """
+    Writes data (up to 2D arrays) to table-like files.
+
+    Parameters
+    ----------
+    delim       : Set of characters used to separate the columns of the input data.
+    start       : Row column tuple defining the top left corner of the target area in the file.
+    end         : Bottom right corner of the target area.
+    delimChars  : List of all characters used to separate the columns of the target file.
+
+    See also
+    --------
+    TableReader (start/end work the same way).
+    """
     def __init__(self,delim="  ",start=(0,0),end=(None,None),delimChars=""):
         self._end = end
         self._start = start

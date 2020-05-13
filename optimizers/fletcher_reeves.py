@@ -19,8 +19,29 @@ from optimizers.line_searches import goldenSection
 import numpy as np
 
 
-# Fletcher-Reeves method
 def fletcherReeves(fun,x,grad,options,lineSearch=goldenSection):
+    """
+    Fletcher-Reeves method. The interface and options are similar to Scipy's L-BFGS-B.
+
+    Parameters
+    ----------
+    fun         : Callable function, should take a numpy array and return a float.
+    x           : The starting point of the optimization.
+    grad        : Callable gradient method, takes and returns a numpy array.
+    options     : Dictionary of options:
+                  "ftol" function-based tolerance [no default];
+                  "gtol" norm of gradient-based tolerance [no default];
+                  "maxiter" maximum number of iterations [no default];
+                  "disp" True to print messages [False];
+                  "maxcor" restart period of the method [x.size+1];
+                  "maxls" maximum number of line searches per iteration [20];
+                  "tolls" stopping criteria for line searches [1e-3].
+    lineSearch  : The line search method used.
+
+    See also
+    --------
+    goldenSection and quadraticInterpolation line search methods.
+    """
     # unpack options
     ftol = options["ftol"]
     gtol = options["gtol"]

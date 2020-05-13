@@ -20,8 +20,18 @@ import shutil
 import subprocess as sp
 
 
-# Class to define an execution of an external code
 class ExternalRun:
+    """
+    Defines the execution of an external code (managed via Popen).
+    A lazy execution model is used, once run, a new process will not be started
+    until the "lazy" flags are explicitly cleared via "finalize()".
+
+    Parameters
+    ----------
+    dir         : The subdirectory within which the command will be run.
+    command     : The shell command used to create the external process.
+    useSymLinks : If set to True, symbolic links are used for "data" files instead of copies.
+    """
     def __init__(self,dir,command,useSymLinks=False):
         self._dataFiles = []
         self._confFiles = []
@@ -45,6 +55,16 @@ class ExternalRun:
         flist.append(file)
 
     def addData(self,file,location="auto"):
+        """
+        Adds a "data" file to the run, an immutable dependency of the process.
+
+        Parameters
+        ----------
+        file     : Path to the file.
+        location : Type of path, "relative" (to the parent of "dir"), "absolute" (the path
+                   is immediately converted to an absolute path, the file must exist),
+                   or "auto" (tries "absolute" first, reverts to "relative"). 
+        """
         if location is "relative":
             self._dataFiles.append(file)
         else:
@@ -59,26 +79,41 @@ class ExternalRun:
     #end
 
     def addConfig(self,file):
-        # config files are always assumed to be absolute
+        """Add a "configuration" file to the run, a mutable dependency onto which
+        Parameters and Variables are written. The path ("file") is converted
+        to absolute immediately."""
         self._addAbsoluteFile(file,self._confFiles)
 
     def addParameter(self,param):
+        """Add a parameter to the run. Parameters are written to the configuration
+        files before variables."""
         self._parameters.append(param)
 
     def addExpected(self,file):
-        # consider always relative
+        """Add an expected (output) file of the run, the presence of all expected
+        files in the working subdirectory indicates that the run succeeded."""
         self._expectedFiles.append(os.path.join(self._workDir,file))
 
     def setMaxTries(self,num):
+        """Sets the maximum number of times a run is re-tried should it fail."""
         self._maxTries = num
 
     def getParameters(self):
         return self._parameters
 
     def updateVariables(self,variables):
+        """
+        Update the set of variables associated with the run. This method is intended
+        to be part of the preprocessing done by driver classes. Unlike addParameter,
+        users do not need to call it explicitly.
+        """
         self._variables.update(variables)
 
     def initialize(self):
+        """
+        Initialize the run, create the subdirectory, copy/symlink the data and
+        configuration files, and write the parameters and variables to the latter.
+        """
         if self._isIni: return
 
         os.mkdir(self._workDir)
@@ -108,8 +143,8 @@ class ExternalRun:
                         shell=True,stdout=self._stdout,stderr=self._stderr)
     #end
 
-    # on failure this function recurses up to "maxTries" times
     def run(self,timeout=None):
+        """Start the process and wait for it to finish."""
         if not self._isIni:
             raise RuntimeError("Run was not initialized.")
         if self._numTries == self._maxTries:
@@ -132,8 +167,8 @@ class ExternalRun:
         return self._retcode
     #end
 
-    # again we recurse up to "maxTries" times
     def poll(self):
+        """Polls the state of the process, does not wait for it to finish."""
         if not self._isIni:
             raise RuntimeError("Run was not initialized.")
         if self._numTries == self._maxTries:
@@ -160,13 +195,15 @@ class ExternalRun:
     #end
 
     def isIni(self):
+        """Return True if the run was initialized."""
         return self._isIni
 
     def isRun(self):
+        """Return True if the run has finished."""
         return self._isRun
 
-    # reset "lazy" flags
     def finalize(self):
+        """Reset "lazy" flags, close the stdout and stderr of the process."""
         try:
             self._stdout.close()
             self._stderr.close()

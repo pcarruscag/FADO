@@ -21,10 +21,17 @@ import subprocess as sp
 from drivers.base_driver import DriverBase
 
 
-# Intermediate class that adds parallel evaluation capabilities.
-# asNeeded: If True, the gradients of constraints are only evaluated if they are
-#           active, this is possible for the exterior penalty driver.
 class ParallelEvalDriver(DriverBase):
+    """
+    Intermediate class that adds parallel evaluation capabilities to the base driver.
+    In parallel mode, the evaluation steps of the functions are started asynchronously
+    as soon as all their dependencies are met.
+
+    Parameters
+    ----------
+    asNeeded: If True, the gradients of constraints are only evaluated if they are
+              active, this is possible for the exterior penalty driver.
+    """
     def __init__(self, asNeeded = False):
         DriverBase.__init__(self)
 
@@ -42,8 +49,12 @@ class ParallelEvalDriver(DriverBase):
         self._waitTime = 10.0
     #end
 
-    # build evaluation graphs for parallel execution
     def setEvaluationMode(self,parallel=True,waitTime=10.0):
+        """
+        Set parallel or sequential (default) evaluation modes. In parallel mode the
+        driver will check if it can start new evaluations every "waitTime" seconds.
+        Builds the evaluation graphs (dependencies) for parallel execution.
+        """
         self._parallelEval = parallel
         if not parallel: return # no need to build graphs
         self._waitTime = waitTime
