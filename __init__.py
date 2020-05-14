@@ -1,6 +1,7 @@
 from variable import *
 from function import *
 from evaluation import *
+from documentation import *
 from tools import LabelReplacer
 from tools import ArrayLabelReplacer
 from tools import PreStringHandler

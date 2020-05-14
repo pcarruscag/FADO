@@ -21,7 +21,7 @@ import numpy as np
 
 def fletcherReeves(fun,x,grad,options,lineSearch=goldenSection):
     """
-    Fletcher-Reeves method. The interface and options are similar to Scipy's L-BFGS-B.
+    Fletcher-Reeves method. The interface and options are similar to SciPy's L-BFGS-B.
 
     Parameters
     ----------

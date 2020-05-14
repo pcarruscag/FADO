@@ -56,8 +56,8 @@ class ConstrainedOptimizationDriver(ParallelEvalDriver):
             self._hisObj.write("Parameter update.\n")
     #end
 
+    # Basic preparation of the optimization problem
     def preprocess(self):
-        """Prepares the optimization problem."""
         self._preprocessVariables()
 
         self._ofval = np.zeros((len(self._objectives),))

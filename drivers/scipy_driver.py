@@ -23,7 +23,7 @@ from drivers.constrained_optim_driver import ConstrainedOptimizationDriver
 
 class ScipyDriver(ConstrainedOptimizationDriver):
     """
-    Driver to use with the Scipy optimizers, especially the constrained ones.
+    Driver to use with the SciPy optimizers, especially the constrained ones.
     """
     def __init__(self):
         ConstrainedOptimizationDriver.__init__(self)
@@ -36,7 +36,7 @@ class ScipyDriver(ConstrainedOptimizationDriver):
     def preprocess(self):
         """
         Prepares the optimization problem, including preprocessing variables,
-        and setting up the lists of constraints and variable bounds that Scipy
+        and setting up the lists of constraints and variable bounds that SciPy
         needs. Must be called after all functions are added to the driver.
         """
         ConstrainedOptimizationDriver.preprocess(self)
@@ -63,22 +63,22 @@ class ScipyDriver(ConstrainedOptimizationDriver):
     #end
 
     def getConstraints(self):
-        """Returns the constraint list that can be passed to Scipy."""
+        """Returns the constraint list that can be passed to SciPy."""
         return self._constraints
 
     def getBounds(self):
-        """Return the variable bounds in a format compatible with Scipy."""
+        """Return the variable bounds in a format compatible with SciPy."""
         return self._bounds
 
     def fun(self, x):
-        """Method passed to Scipy to get the objective function value."""
+        """Method passed to SciPy to get the objective function value."""
         # Evaluates all functions if necessary.
         self._evaluateFunctions(x)
         return self._ofval.sum()
     #end
 
     def grad(self, x):
-        """Method passed to Scipy to get the objective function gradient."""
+        """Method passed to SciPy to get the objective function gradient."""
         # Evaluates gradients and functions if necessary, otherwise it
         # simply combines and scales the results.    
         self._jacTime -= time.time()
@@ -105,7 +105,7 @@ class ScipyDriver(ConstrainedOptimizationDriver):
         return self._grad_f
     #end
 
-    # Method passed to Scipy to expose the constraint vector.
+    # Method passed to SciPy to expose the constraint vector.
     def _eval_g(self, x, idx):
         self._evaluateFunctions(x)
 
@@ -118,7 +118,7 @@ class ScipyDriver(ConstrainedOptimizationDriver):
         return out
     #end
 
-    # Method passed to Scipy to expose the constraint Jacobian.
+    # Method passed to SciPy to expose the constraint Jacobian.
     def _eval_jac_g(self, x, idx):
         self._jacTime -= time.time()
         try:
