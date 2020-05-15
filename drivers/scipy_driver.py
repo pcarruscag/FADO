@@ -41,15 +41,21 @@ class ScipyDriver(ConstrainedOptimizationDriver):
         """
         ConstrainedOptimizationDriver.preprocess(self)
 
+        class _fun:
+            def __init__(self,fun,idx):
+                self._f = fun
+                self._i = idx
+            def __call__(self,x):
+                return self._f(x,self._i)
+        #end
+
         # setup the constraint list, the callbacks are the same for all
         # constraints, an index argument (i) is used to distinguish them.
         self._constraints = []
         for i in range(self._nCon):
-            con = {'type' : ('ineq','eq')[i<len(self._constraintsEQ)],
-                   'fun' : self._eval_g,
-                   'jac' : self._eval_jac_g,
-                   'args' : [i]}
-            self._constraints.append(con)
+            self._constraints.append({'type' : ('ineq','eq')[i<len(self._constraintsEQ)],
+                                      'fun' : _fun(self._eval_g,i),
+                                      'jac' : _fun(self._eval_jac_g,i)})
         #end
 
         # variable bounds
