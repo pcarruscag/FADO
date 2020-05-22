@@ -65,7 +65,7 @@ driver = ExteriorPenaltyDriver(0.005,update_iters)
 driver.addObjective("min",fun1,80.0)
 driver.addUpperBound(fun2,0.5,2.0)
 
-driver.preprocessVariables()
+driver.preprocess()
 driver.setEvaluationMode(False)
 driver.setStorageMode(False)
 

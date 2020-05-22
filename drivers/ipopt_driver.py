@@ -127,11 +127,17 @@ class IpoptDriver(ConstrainedOptimizationDriver):
             i = 0
             mask = self._variableStartMask
 
-            for conType in [self._constraintsEQ, self._constraintsGT]:
-                for con in conType:
+            for con in self._constraintsEQ:
+                out[i:(i+self._nVar)] = con.function.getGradient(mask) * con.scale / self._varScales
+                i += self._nVar
+            #end
+            for (con,f) in zip(self._constraintsGT, self._gtval):
+                if f < 0.0 or not self._asNeeded:
                     out[i:(i+self._nVar)] = con.function.getGradient(mask) * con.scale / self._varScales
-                    i += self._nVar
+                else:
+                    out[i:(i+self._nVar)] = 0.0
                 #end
+                i += self._nVar
             #end
 
             # keep reference to result to use as fallback on next iteration if needed

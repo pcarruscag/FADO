@@ -56,6 +56,16 @@ class ConstrainedOptimizationDriver(ParallelEvalDriver):
             self._hisObj.write("Parameter update.\n")
     #end
 
+    def setConstraintGradientEvalMode(self, onlyWhenActive=False):
+        """
+        Set the evaluation mode for constraint gradients.
+        If onlyWhenActive==True the driver will not evaluate the gradients of
+        inactive constraints, this may be acceptable for some optimizers or if
+        the gradients are known to be zero in the inactive region.
+        """
+        self._asNeeded = onlyWhenActive
+    #end
+
     # Basic preparation of the optimization problem
     def preprocess(self):
         self._preprocessVariables()

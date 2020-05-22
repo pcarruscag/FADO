@@ -68,6 +68,10 @@ class ExteriorPenaltyDriver(ParallelEvalDriver):
         """Setup method that must be called after all functions are added to the driver."""
         self._preprocessVariables()
 
+    def preprocess(self):
+        """Alias for preprocessVariables."""
+        self._preprocessVariables()
+
     # method for lazy initialization
     def _initialize(self):
         if self._isInit: return

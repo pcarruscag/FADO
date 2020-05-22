@@ -136,11 +136,17 @@ class ScipyDriver(ConstrainedOptimizationDriver):
 
             if idx < len(self._constraintsEQ):
                 con = self._constraintsEQ[idx]
+                f = -1.0 # for purposes of lazy evaluation equality is always active
             else:
                 con = self._constraintsGT[idx-len(self._constraintsEQ)]
+                f = self._gtval[idx-len(self._constraintsEQ)]
             #end
 
-            self._jac_g[:,idx] = con.function.getGradient(mask) * con.scale / self._varScales
+            if f < 0.0 or not self._asNeeded:
+                self._jac_g[:,idx] = con.function.getGradient(mask) * con.scale / self._varScales
+            else:
+                self._jac_g[:,idx] = 0.0
+            #end
 
             # keep reference to result to use as fallback on next iteration if needed
             self._old_jac_g[:,idx] = self._jac_g[:,idx]
