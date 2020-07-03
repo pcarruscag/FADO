@@ -105,6 +105,9 @@ class ScipyDriver(ConstrainedOptimizationDriver):
             self._grad_f[()] = self._old_grad_f
         #end
 
+        if not self._parallelEval:
+            self._runAction(self._userPostProcessGrad)
+
         self._jacTime += time.time()
         os.chdir(self._userDir)
 
@@ -154,6 +157,9 @@ class ScipyDriver(ConstrainedOptimizationDriver):
             if self._failureMode == "HARD": raise
             self._jac_g[:,idx] = self._old_jac_g[:,idx]
         #end
+
+        if not self._parallelEval:
+            self._runAction(self._userPostProcessGrad)
 
         self._jacTime += time.time()
         os.chdir(self._userDir)

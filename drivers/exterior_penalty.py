@@ -191,6 +191,9 @@ class ExteriorPenaltyDriver(ParallelEvalDriver):
 
         self._grad /= self._varScales
 
+        if not self._parallelEval:
+            self._runAction(self._userPostProcessGrad)
+
         self._jacTime += time.time()
         os.chdir(self._userDir)
 

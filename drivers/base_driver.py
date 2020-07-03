@@ -80,8 +80,10 @@ class DriverBase:
         self._hisObj = None
         self._hisDelim = ",  "
 
-        self._userPreProcessFun = ""
-        self._userPreProcessGrad = ""
+        self._userPreProcessFun = None
+        self._userPreProcessGrad = None
+        self._userPostProcessFun = None
+        self._userPostProcessGrad = None
     #end
 
     def addObjective(self,type,function,scale=1.0,weight=1.0):
@@ -237,11 +239,21 @@ class DriverBase:
         assert mode == "HARD" or mode == "SOFT", "Mode must be either \"HARD\" (exceptions) or \"SOFT\" (default function values)."
         self._failureMode = mode
 
-    def setUserPreProcessFun(self,command):
-        self._userPreProcessFun = command
+    def setUserPreProcessFun(self,callableOrString):
+        """Set a preprocessing action executed before evaluating function values."""
+        self._userPreProcessFun = callableOrString
 
-    def setUserPreProcessGrad(self,command):
-        self._userPreProcessGrad = command
+    def setUserPreProcessGrad(self,callableOrString):
+        """Set a preprocessing action executed before evaluating function gradients."""
+        self._userPreProcessGrad = callableOrString
+
+    def setUserPostProcessFun(self,callableOrString):
+        """Set a postprocessing action executed after evaluating function values."""
+        self._userPostProcessFun = callableOrString
+
+    def setUserPostProcessGrad(self,callableOrString):
+        """Set a postprocessing action executed after evaluating function gradients."""
+        self._userPostProcessGrad = callableOrString
 
     def _resetAllValueEvaluations(self):
         for obj in self._objectives:

@@ -94,6 +94,16 @@ driver.addUpperBound(fun3,2.0)
 driver.preprocessVariables()
 driver.setStorageMode(False)
 
+class exampleAction:
+    def __init__(self, message):
+        self._message = message
+
+    def __call__(self):
+        print(self._message)
+#end
+
+driver.setUserPostProcessGrad(exampleAction("after gradient"))
+
 # Optimization
 # now the "fun" and "grad" methods of the driver can be passed to an optimizer
 x  = driver.getInitial()

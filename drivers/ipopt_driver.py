@@ -93,6 +93,9 @@ class IpoptDriver(ConstrainedOptimizationDriver):
             else: out[()] = self._old_grad_f
         #end
 
+        if not self._parallelEval:
+            self._runAction(self._userPostProcessGrad)
+
         self._jacTime += time.time()
         os.chdir(self._userDir)
 
@@ -147,6 +150,9 @@ class IpoptDriver(ConstrainedOptimizationDriver):
             if self._old_jac_g is None: out[()] = 0.0
             else: out[()] = self._old_jac_g
         #end
+
+        if not self._parallelEval:
+            self._runAction(self._userPostProcessGrad)
 
         self._jacTime += time.time()
         os.chdir(self._userDir)

@@ -162,6 +162,17 @@ class ParallelEvalDriver(DriverBase):
         self._jacTime += time.time()
     #end
 
+    # runs a pre/post processing user action
+    def _runAction(self, action):
+        if action is None: return
+        os.chdir(self._userDir)
+        if isinstance(action,str):
+            sp.call(action,shell=True)
+        else:
+            action()
+        #end
+    #end
+
     # Evaluate all functions (objectives and constraints), imediately
     # retrieves and stores the results after shifting and scaling.
     def _evaluateFunctions(self, x):
@@ -170,10 +181,7 @@ class ParallelEvalDriver(DriverBase):
         # lazy evaluation
         if self._funReady: return False
 
-        if self._userPreProcessFun:
-            os.chdir(self._userDir)
-            sp.call(self._userPreProcessFun,shell=True)
-        #end
+        self._runAction(self._userPreProcessFun)
 
         os.chdir(self._workDir)
 
@@ -219,10 +227,10 @@ class ParallelEvalDriver(DriverBase):
         for i, obj in enumerate(self._constraintsGT):
             self._gtval[i] = (self._gtval[i] - obj.bound) * obj.scale
 
-        self._funReady = True
+        self._runAction(self._userPostProcessFun)
 
         os.chdir(self._userDir)
-
+        self._funReady = True
         return True
     #end
 
@@ -236,22 +244,20 @@ class ParallelEvalDriver(DriverBase):
         # lazy evaluation
         if self._jacReady: return False
 
-        if self._userPreProcessGrad:
-            os.chdir(self._userDir)
-            sp.call(self._userPreProcessGrad,shell=True)
-        #end
+        self._runAction(self._userPreProcessGrad)
 
         os.chdir(self._workDir)
 
         # evaluate everything, either in parallel or sequentially,
         # in the latter case the evaluations occur when retrieving the values
-        if self._parallelEval: self._evalJacInParallel()
+        if self._parallelEval:
+            self._evalJacInParallel()
+            self._runAction(self._userPostProcessGrad)
+        #end
 
         os.chdir(self._userDir)
-
-        self._jacEval += 1
         self._jacReady = True
-
+        self._jacEval += 1
         return True
     #end
 #end
