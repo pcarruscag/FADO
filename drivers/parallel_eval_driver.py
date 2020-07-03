@@ -181,7 +181,7 @@ class ParallelEvalDriver(DriverBase):
             try:
                 self._evalFunInParallel()
             except:
-                if self._failureMode is "HARD": raise
+                if self._failureMode == "HARD": raise
         #end
 
         self._funEval += 1
@@ -192,7 +192,7 @@ class ParallelEvalDriver(DriverBase):
                 try:
                     dst[i] = obj.function.getValue()
                 except:
-                    if obj.function.hasDefaultValue() and self._failureMode is "SOFT":
+                    if obj.function.hasDefaultValue() and self._failureMode == "SOFT":
                         dst[i] = obj.function.getDefaultValue()
                     else:
                         raise

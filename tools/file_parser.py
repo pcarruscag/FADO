@@ -199,14 +199,14 @@ class TableReader:
                 data[row,col] = float(tmp[col])
         #end
 
-        if self._row == None:
-            if self._col == None:
+        if self._row is None:
+            if self._col is None:
                 return data
             else:
                 return data[:,self._col]
             #end
         else:
-            if self._col == None:
+            if self._col is None:
                 return data[self._row,:]
             else:
                 return data[self._row,self._col]
@@ -252,7 +252,7 @@ class TableWriter:
 
         # skip header and footer rows
         lines = lines[self._start[0]:self._end[0]]
-        if lines[-1].strip() is "": lines = lines[0:-1]
+        if not lines[-1].strip(): lines = lines[0:-1]
 
         if len(lines) != values.shape[0]:
             raise RuntimeError("Data and file have different number of rows.")

@@ -234,7 +234,7 @@ class DriverBase:
         for "SOFT" the driver catches exceptions and uses default function values (if they have them).
         The "SOFT" mode is useful if the optimizer does not handle exceptions.
         """
-        assert mode is "HARD" or mode is "SOFT", "Mode must be either \"HARD\" (exceptions) or \"SOFT\" (default function values)."
+        assert mode == "HARD" or mode == "SOFT", "Mode must be either \"HARD\" (exceptions) or \"SOFT\" (default function values)."
         self._failureMode = mode
 
     def setUserPreProcessFun(self,command):

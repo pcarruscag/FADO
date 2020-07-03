@@ -161,7 +161,7 @@ class ExteriorPenaltyDriver(ParallelEvalDriver):
             self._evaluateGradients(x)
             return self._grad
         except:
-            if self._failureMode is "HARD": raise
+            if self._failureMode == "HARD": raise
             return self._old_grad
         #end
     #end

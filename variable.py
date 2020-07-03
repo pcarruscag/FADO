@@ -104,15 +104,15 @@ class InputVariable:
         return self._scale
 
     def get(self,name):
-        if name is "Initial":
+        if name == "Initial":
             return self.getInitial()
-        elif name is "Current":
+        elif name == "Current":
             return self.getCurrent()
-        elif name is "LowerBound":
+        elif name == "LowerBound":
             return self.getLowerBound()
-        elif name is "UpperBound":
+        elif name == "UpperBound":
             return self.getUpperBound()
-        elif name is "Scale":
+        elif name == "Scale":
             return self.getScale()
         else:
             raise KeyError("Variable does not have field: `"+name+"`")

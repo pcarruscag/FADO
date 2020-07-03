@@ -88,7 +88,7 @@ class IpoptDriver(ConstrainedOptimizationDriver):
             # keep reference to result to use as fallback on next iteration if needed
             self._old_grad_f = out
         except:
-            if self._failureMode is "HARD": raise
+            if self._failureMode == "HARD": raise
             if self._old_grad_f is None: out[()] = 0.0
             else: out[()] = self._old_grad_f
         #end
@@ -143,7 +143,7 @@ class IpoptDriver(ConstrainedOptimizationDriver):
             # keep reference to result to use as fallback on next iteration if needed
             self._old_jac_g = out
         except:
-            if self._failureMode is "HARD": raise
+            if self._failureMode == "HARD": raise
             if self._old_jac_g is None: out[()] = 0.0
             else: out[()] = self._old_jac_g
         #end

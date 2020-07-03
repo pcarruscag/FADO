@@ -65,13 +65,13 @@ class ExternalRun:
                    is immediately converted to an absolute path, the file must exist),
                    or "auto" (tries "absolute" first, reverts to "relative"). 
         """
-        if location is "relative":
+        if location == "relative":
             self._dataFiles.append(file)
         else:
             try:
                 self._addAbsoluteFile(file,self._dataFiles)
             except:
-                if location is "absolute": raise
+                if location == "absolute": raise
                 # in "auto" mode, if absolute fails consider relative
                 else: self._dataFiles.append(file)
             #end

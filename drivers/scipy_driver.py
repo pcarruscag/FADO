@@ -101,7 +101,7 @@ class ScipyDriver(ConstrainedOptimizationDriver):
             # keep copy of result to use as fallback on next iteration if needed
             self._old_grad_f[()] = self._grad_f
         except:
-            if self._failureMode is "HARD": raise
+            if self._failureMode == "HARD": raise
             self._grad_f[()] = self._old_grad_f
         #end
 
@@ -151,7 +151,7 @@ class ScipyDriver(ConstrainedOptimizationDriver):
             # keep reference to result to use as fallback on next iteration if needed
             self._old_jac_g[:,idx] = self._jac_g[:,idx]
         except:
-            if self._failureMode is "HARD": raise
+            if self._failureMode == "HARD": raise
             self._jac_g[:,idx] = self._old_jac_g[:,idx]
         #end
 
