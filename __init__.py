@@ -6,6 +6,7 @@ from tools import LabelReplacer
 from tools import ArrayLabelReplacer
 from tools import PreStringHandler
 from tools import TableReader
+from tools import LabeledTableReader
 from tools import TableWriter
 from tools import BoundConstraints
 from tools import GradientScale

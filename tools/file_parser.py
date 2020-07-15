@@ -216,6 +216,39 @@ class TableReader:
 #end
 
 
+class LabeledTableReader(TableReader):
+    """
+    Reads elements from a column of a table-like file identified by "label".
+    The entire file must be in table format, and the label appear on the first row.
+
+    Parameters
+    ----------
+    label : Title of the column (usually a string).
+    delim : Delimiter character separating the columns.
+    rang  : Row range, by default return the last value in the column.
+
+    See also
+    --------
+    TableReader, PreStringHandler
+    """
+    def __init__(self,label,delim=",",rang=(-1,None)):
+        self._label = label
+        self._range = rang
+        TableReader.__init__(self,None,None,(1,0),(None,None),delim)
+    #end
+
+    def read(self,file):
+        with open(file) as f:
+            header = f.readline().split(self._delim)
+        header = [x.strip() for x in header]
+        self._col = header.index(self._label)
+        data = TableReader.read(self,file)[self._range[0]:self._range[1]]
+        if data.size == 1: data = data[0]
+        return data
+    #end
+#end
+
+
 class TableWriter:
     """
     Writes data (up to 2D arrays) to table-like files.

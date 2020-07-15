@@ -35,6 +35,7 @@ Any object implementing `write(file,values)` and/or `read(file) -> values` can b
 - **ArrayLabelReplacer**: Does the same for array-like values.
 - **PreStringHandler**: Reads(writes) a list of values separated by a configurable delimiter from(in) front of a label defining the start of a line (i.e. the line must start with the label).
 - **TableReader/Writer**: Reads or writes to a section of a delimited table, rows outside of the table range do not need to be in table format, but those inside are expected to have the same number of columns, the examples should make it clear how to use these classes.
+- **LabeledTableReader**: Reads values from CSV-type files based on column name and range of rows.
 
 ## Installation
 Make the parent directory ("../") and FADO's ("./") reachable to Python, usually via PYTHONPATH, `from FADO import *` should then work (provided the name of the directory was not changed).
