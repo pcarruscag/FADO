@@ -47,7 +47,7 @@ The ScipyDriver was designed with the constrained optimization methods in mind (
 To use the IpoptDriver you need [IPyOpt](https://github.com/g-braeunlich/IPyOpt) and [Ipopt](https://github.com/coin-or/Ipopt), the latter can be installed with apt-get.
 
 ## Usage
-Have a look at the examples, "example" is a contrived example using the Rosenbrock function, the others are realistic uses of [SU2](https://su2code.github.io/).
+Have a look at the examples, "examples/rosenbrock" is a contrived example using the Rosenbrock function, the others are realistic uses of [SU2](https://su2code.github.io/).
 All the important classes and methods have Python documentation strings, these can be printed using the utility function `printDocumentation`, e.g. `FADO.printDocumentation(FADO.TableReader)`, for classes this will print the documentation for all their methods.
 In general, undocumented methods are meant for FADO's internal use, and should not be called by users.
 

@@ -4,11 +4,11 @@ from FADO import *
 import ipyopt
 from shutil import copy
 
-copy("../example/direct.py",".")
-copy("../example/adjoint.py",".")
-copy("../example/config_tmpl.txt",".")
-copy("../example/data1.txt",".")
-copy("../example/data2.txt",".")
+copy("../rosenbrock/direct.py",".")
+copy("../rosenbrock/adjoint.py",".")
+copy("../rosenbrock/config_tmpl.txt",".")
+copy("../rosenbrock/data1.txt",".")
+copy("../rosenbrock/data2.txt",".")
 
 # Design variables of the problem
 # this defines initial value and how they are written to an arbitrary file
