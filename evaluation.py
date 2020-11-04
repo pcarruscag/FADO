@@ -145,30 +145,14 @@ class ExternalRun:
 
     def run(self,timeout=None):
         """Start the process and wait for it to finish."""
-        if not self._isIni:
-            raise RuntimeError("Run was not initialized.")
-        if self._numTries == self._maxTries:
-            raise RuntimeError("Run failed.")
-        if self._isRun:
-            return self._retcode
-
-        self._retcode = self._process.wait(timeout)
-        self._numTries += 1
-
-        if not self._success():
-            self.finalize()
-            self._createProcess()
-            self._isIni = True
-            return self.run(timeout)
-        #end
-
-        self._numTries = 0
-        self._isRun = True
-        return self._retcode
-    #end
+        return self._exec(True,timeout)
 
     def poll(self):
         """Polls the state of the process, does not wait for it to finish."""
+        return self._exec(False,None)
+
+    # Common implementation of "run" and "poll"
+    def _exec(self,wait,timeout):
         if not self._isIni:
             raise RuntimeError("Run was not initialized.")
         if self._numTries == self._maxTries:
@@ -176,19 +160,28 @@ class ExternalRun:
         if self._isRun:
             return self._retcode
 
-        if self._process.poll() is not None:
+        if wait:
+            self._process.wait(timeout)
+            status = True
+        else:
+            status = self._process.poll() is not None
+        #end
+
+        if status:
             self._numTries += 1
+            self._retcode = self._process.returncode
+            self._isRun = True
 
             if not self._success():
-                self.finalize()
-                self._createProcess()
-                self._isIni = True
-                return self.poll()
+                if self._numTries < self._maxTries:
+                    self.finalize()
+                    self._createProcess()
+                    self._isIni = True
+                #end
+                return self._exec(wait,timeout)
             #end
 
             self._numTries = 0
-            self._retcode = self._process.returncode
-            self._isRun = True
         #end
 
         return self._retcode
