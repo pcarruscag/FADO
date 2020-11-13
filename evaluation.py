@@ -113,26 +113,33 @@ class ExternalRun:
         """
         Initialize the run, create the subdirectory, copy/symlink the data and
         configuration files, and write the parameters and variables to the latter.
+        Creates the process object, starting it in detached mode.
         """
         if self._isIni: return
 
-        os.mkdir(self._workDir)
-        for file in self._dataFiles:
-            target = os.path.join(self._workDir,os.path.basename(file))
-            (shutil.copy,os.symlink)[self._symLinks](os.path.abspath(file),target)
+        try:
+            os.mkdir(self._workDir)
+            for file in self._dataFiles:
+                target = os.path.join(self._workDir,os.path.basename(file))
+                (shutil.copy,os.symlink)[self._symLinks](os.path.abspath(file),target)
 
-        for file in self._confFiles:
-            target = os.path.join(self._workDir,os.path.basename(file))
-            shutil.copy(file,target)
-            for par in self._parameters:
-                par.writeToFile(target)
-            for var in self._variables:
-                var.writeToFile(target)
+            for file in self._confFiles:
+                target = os.path.join(self._workDir,os.path.basename(file))
+                shutil.copy(file,target)
+                for par in self._parameters:
+                    par.writeToFile(target)
+                for var in self._variables:
+                    var.writeToFile(target)
 
-        self._createProcess()
-        self._isIni = True
-        self._isRun = False
-        self._numTries = 0
+            self._createProcess()
+            self._isIni = True
+            self._isRun = False
+            self._isError = False
+            self._numTries = 0
+        except:
+            self._isError = True
+            raise
+        #end
     #end
 
     def _createProcess(self):
@@ -154,8 +161,10 @@ class ExternalRun:
     # Common implementation of "run" and "poll"
     def _exec(self,wait,timeout):
         if not self._isIni:
+            self._isError = True
             raise RuntimeError("Run was not initialized.")
         if self._numTries == self._maxTries:
+            self._isError = True
             raise RuntimeError("Run failed.")
         if self._isRun:
             return self._retcode
@@ -195,6 +204,10 @@ class ExternalRun:
         """Return True if the run has finished."""
         return self._isRun
 
+    def isError(self):
+        """Return True if the run has failed."""
+        return self._isError
+
     def finalize(self):
         """Reset "lazy" flags, close the stdout and stderr of the process."""
         try:
@@ -204,6 +217,7 @@ class ExternalRun:
             pass
         self._isIni = False
         self._isRun = False
+        self._isError = False
         self._retcode = -100
     #end
 

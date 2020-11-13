@@ -128,6 +128,13 @@ class Function(FunctionBase):
         """Add a required step to compute the function gradient."""
         self._gradEval.append(evaluation)
 
+    # check if any evaluation is in error state
+    def _checkError(self,evals):
+        for evl in evals:
+            if evl.isError(): raise RuntimeError("Evaluations failed.")
+        #end
+    #end
+
     def getValue(self):
         """
         Get the function value, i.e. apply the parser to the output file.
@@ -136,6 +143,8 @@ class Function(FunctionBase):
         is set via the Variable objects.
         """
         # check if we can retrive the value
+        self._checkError(self._funEval)
+
         for evl in self._funEval:
             if not evl.isRun():
                 self._sequentialEval(self._funEval)
@@ -157,6 +166,8 @@ class Function(FunctionBase):
         getGradient({x : 0, z : 3}) -> [0, 0, 0, 2, 2]
         """
         # check if we can retrive the gradient
+        self._checkError(self._gradEval)
+
         for evl in self._gradEval:
             if not evl.isRun():
                 self._sequentialEval(self._gradEval)

@@ -82,7 +82,7 @@ class ParallelEvalDriver(DriverBase):
                 evals = obj.function.getValueEvalChain()
                 for i in range(1,len(evals)):
                     funGraph[evals[i]].add(evals[i-1])
-                    
+
                 evals = obj.function.getGradientEvalChain()
                 for i in range(1,len(evals)):
                     jacGraph[evals[i]].add(evals[i-1])
@@ -95,6 +95,10 @@ class ParallelEvalDriver(DriverBase):
 
     # run the active evaluations of a dependency graph
     def _evalInParallel(self,dependGraph,active):
+        # to avoid exiting with dangling evaluations we need to catch
+        # all exceptions and throw when the infinite loop finishes
+        error = False
+        completed = lambda evl: evl.isRun() or evl.isError()
         while True:
             allRun = True
             for evl,depList in dependGraph.items():
@@ -105,24 +109,34 @@ class ParallelEvalDriver(DriverBase):
                     active[dep] = True
 
                 # either running or finished, move on
-                if evl.isIni() or evl.isRun():
-                    evl.poll() # (starts or updates internal state)
-                    allRun &= evl.isRun()
+                if evl.isIni() or completed(evl):
+                    try:
+                        evl.poll() # (starts or updates internal state)
+                        allRun &= completed(evl)
+                    except:
+                        error = True
+                    #end
                     continue
                 #end
-                allRun &= evl.isRun()
+                allRun &= completed(evl)
 
-                # if dependencies are met, start evaluation
+                # if dependencies are met start evaluation, error is considered
+                # as "met" otherwise the outer loop would never exit
                 for dep in depList:
-                    if not dep.isRun(): break
+                    if not completed(dep): break
                 else:
-                    evl.initialize()
-                    evl.poll()
+                    try:
+                        evl.initialize()
+                        evl.poll()
+                    except:
+                        error = True
+                    #end
                 #end
             #end
             if allRun: break
             time.sleep(self._waitTime)
         #end
+        if error: raise RuntimeError("Evaluations failed.")
     #end
 
     # run evaluations extracting maximum parallelism
