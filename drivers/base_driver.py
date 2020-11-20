@@ -301,6 +301,12 @@ class DriverBase:
         self._setCurrent(x)
         self._x[()] = x
 
+        # trigger evaluations
+        self._funReady = False
+        self._jacReady = False
+        self._resetAllValueEvaluations()
+        self._resetAllGradientEvaluations()
+
         # manage working directories
         os.chdir(self._userDir)
         if os.path.isdir(self._workDir):
@@ -313,12 +319,6 @@ class DriverBase:
             #end
         #end
         os.mkdir(self._workDir)
-
-        # trigger evaluations
-        self._funReady = False
-        self._jacReady = False
-        self._resetAllValueEvaluations()
-        self._resetAllGradientEvaluations()
 
         return True
     #end

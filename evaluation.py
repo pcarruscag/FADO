@@ -113,26 +113,33 @@ class ExternalRun:
         """
         Initialize the run, create the subdirectory, copy/symlink the data and
         configuration files, and write the parameters and variables to the latter.
+        Creates the process object, starting it in detached mode.
         """
         if self._isIni: return
 
-        os.mkdir(self._workDir)
-        for file in self._dataFiles:
-            target = os.path.join(self._workDir,os.path.basename(file))
-            (shutil.copy,os.symlink)[self._symLinks](os.path.abspath(file),target)
+        try:
+            os.mkdir(self._workDir)
+            for file in self._dataFiles:
+                target = os.path.join(self._workDir,os.path.basename(file))
+                (shutil.copy,os.symlink)[self._symLinks](os.path.abspath(file),target)
 
-        for file in self._confFiles:
-            target = os.path.join(self._workDir,os.path.basename(file))
-            shutil.copy(file,target)
-            for par in self._parameters:
-                par.writeToFile(target)
-            for var in self._variables:
-                var.writeToFile(target)
+            for file in self._confFiles:
+                target = os.path.join(self._workDir,os.path.basename(file))
+                shutil.copy(file,target)
+                for par in self._parameters:
+                    par.writeToFile(target)
+                for var in self._variables:
+                    var.writeToFile(target)
 
-        self._createProcess()
-        self._isIni = True
-        self._isRun = False
-        self._numTries = 0
+            self._createProcess()
+            self._isIni = True
+            self._isRun = False
+            self._isError = False
+            self._numTries = 0
+        except:
+            self._isError = True
+            raise
+        #end
     #end
 
     def _createProcess(self):
@@ -145,50 +152,45 @@ class ExternalRun:
 
     def run(self,timeout=None):
         """Start the process and wait for it to finish."""
-        if not self._isIni:
-            raise RuntimeError("Run was not initialized.")
-        if self._numTries == self._maxTries:
-            raise RuntimeError("Run failed.")
-        if self._isRun:
-            return self._retcode
-
-        self._retcode = self._process.wait(timeout)
-        self._numTries += 1
-
-        if not self._success():
-            self.finalize()
-            self._createProcess()
-            self._isIni = True
-            return self.run(timeout)
-        #end
-
-        self._numTries = 0
-        self._isRun = True
-        return self._retcode
-    #end
+        return self._exec(True,timeout)
 
     def poll(self):
         """Polls the state of the process, does not wait for it to finish."""
+        return self._exec(False,None)
+
+    # Common implementation of "run" and "poll"
+    def _exec(self,wait,timeout):
         if not self._isIni:
+            self._isError = True
             raise RuntimeError("Run was not initialized.")
         if self._numTries == self._maxTries:
+            self._isError = True
             raise RuntimeError("Run failed.")
         if self._isRun:
             return self._retcode
 
-        if self._process.poll() is not None:
+        if wait:
+            self._process.wait(timeout)
+            status = True
+        else:
+            status = self._process.poll() is not None
+        #end
+
+        if status:
             self._numTries += 1
+            self._retcode = self._process.returncode
+            self._isRun = True
 
             if not self._success():
-                self.finalize()
-                self._createProcess()
-                self._isIni = True
-                return self.poll()
+                if self._numTries < self._maxTries:
+                    self.finalize()
+                    self._createProcess()
+                    self._isIni = True
+                #end
+                return self._exec(wait,timeout)
             #end
 
             self._numTries = 0
-            self._retcode = self._process.returncode
-            self._isRun = True
         #end
 
         return self._retcode
@@ -202,6 +204,10 @@ class ExternalRun:
         """Return True if the run has finished."""
         return self._isRun
 
+    def isError(self):
+        """Return True if the run has failed."""
+        return self._isError
+
     def finalize(self):
         """Reset "lazy" flags, close the stdout and stderr of the process."""
         try:
@@ -211,6 +217,7 @@ class ExternalRun:
             pass
         self._isIni = False
         self._isRun = False
+        self._isError = False
         self._retcode = -100
     #end
 
