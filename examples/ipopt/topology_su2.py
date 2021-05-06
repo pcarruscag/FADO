@@ -9,7 +9,6 @@ subprocess.call("unzip -o ../example1_SU2/data.zip",shell=True)
 rho = InputVariable(0.5,TableWriter("  ",(1,-1)),1600,1.0,0.0,1.0)
 
 # Parameters
-directProblem = Parameter(["= DIRECT"], LabelReplacer("= DISCRETE_ADJOINT"))
 adjointOutput = Parameter(["= NONE"], LabelReplacer("= RESTART"))
 fType_objective = Parameter(["TOPOL_COMPLIANCE"], LabelReplacer("__FUNCTION__"))
 fType_constraint = Parameter(["VOLUME_FRACTION"], LabelReplacer("__FUNCTION__"))
@@ -22,7 +21,6 @@ direct = ExternalRun("DIRECT","SU2_CFD -t 1 settings.cfg",True)
 direct.addConfig("settings.cfg")
 direct.addConfig("element_properties.dat")
 direct.addData("mesh.su2")
-direct.addParameter(directProblem)
 direct.addParameter(fType_objective)
 direct.addParameter(beta)
 
@@ -46,15 +44,15 @@ constraint.addParameter(adjointOutput)
 constraint.addParameter(beta)
 
 # Functions
-fun1 = Function("compliance","OBJECTIVE/history.csv",TableReader(0,0,(1,None)))
+fun1 = Function("compliance","DIRECT/history.csv",LabeledTableReader('"TopComp"'))
 fun1.addInputVariable(rho,"OBJECTIVE/grad.dat",TableReader(None,0))
 fun1.addValueEvalStep(direct)
-fun1.addValueEvalStep(objective)
+fun1.addGradientEvalStep(objective)
 
-fun2 = Function("solid_fraction","CONSTRAINT/history.csv",TableReader(0,0,(1,None)))
+fun2 = Function("solid_fraction","DIRECT/history.csv",LabeledTableReader('"VolFrac"'))
 fun2.addInputVariable(rho,"CONSTRAINT/grad.dat",TableReader(None,0))
 fun2.addValueEvalStep(direct)
-fun2.addValueEvalStep(constraint)
+fun2.addGradientEvalStep(constraint)
 
 # Driver
 driver = IpoptDriver()
