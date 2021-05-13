@@ -66,7 +66,7 @@ class ExternalRun:
                      is immediately converted to an absolute path, the file must exist),
                      or "auto" (tries "absolute" first, falls back to "relative").
         destination : Filename to be set at the destination. Discards any additional file path.
-                     The default destination is the regular filename (i.e. "file").
+                      The default destination is the regular filename (i.e. "file").
         """
         if destination is None: destination = file
         self._dataFilesDestination.append(os.path.basename(destination))
