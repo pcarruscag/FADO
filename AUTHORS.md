@@ -15,5 +15,6 @@ Copyright holders might be the individual person or their respective employer. I
 
 ```
 Pedro Gomes
+Tobias Kattmann
 ```
 
