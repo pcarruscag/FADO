@@ -126,7 +126,7 @@ class ExternalRun:
         try:
             os.mkdir(self._workDir)
             for file, destination in zip(self._dataFiles, self._dataFilesDestination):
-                target = os.path.join(self._workDir,os.path.basename(destination))
+                target = os.path.join(self._workDir,destination)
                 (shutil.copy,os.symlink)[self._symLinks](os.path.abspath(file),target)
 
             for file in self._confFiles:
