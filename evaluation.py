@@ -55,7 +55,7 @@ class ExternalRun:
             raise ValueError("File '"+file+"' not found.")
         flist.append(file)
 
-    def addData(self,file,location="auto",destination=""):
+    def addData(self,file,location="auto",destination=None):
         """
         Adds a "data" file to the run, an immutable dependency of the process.
 
@@ -68,7 +68,7 @@ class ExternalRun:
         destination: Filename to be set at the destination. Discard any additional file path.
                      Default destination is the regular filename
         """
-        if destination == "": destination = os.path.basename(file)
+        if destination == None: destination = os.path.basename(file)
         self._dataFilesDestination.append(destination)
 
         if location == "relative":
