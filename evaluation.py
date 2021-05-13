@@ -61,12 +61,12 @@ class ExternalRun:
 
         Parameters
         ----------
-        file       : Path to the file.
-        location   : Type of path, "relative" (to the parent of "dir"), "absolute" (the path
+        file        : Path to the file.
+        location    : Type of path, "relative" (to the parent of "dir"), "absolute" (the path
                      is immediately converted to an absolute path, the file must exist),
-                     or "auto" (tries "absolute" first, reverts to "relative").
-        destination: Filename to be set at the destination. Discard any additional file path.
-                     Default destination is the regular filename
+                     or "auto" (tries "absolute" first, falls back to "relative").
+        destination : Filename to be set at the destination. Discards any additional file path.
+                     The default destination is the regular filename (i.e. "file").
         """
         if destination is None: destination = file
         self._dataFilesDestination.append(os.path.basename(destination))
