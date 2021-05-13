@@ -68,8 +68,8 @@ class ExternalRun:
         destination: Filename to be set at the destination. Discard any additional file path.
                      Default destination is the regular filename
         """
-        if destination is None: destination = os.path.basename(file)
-        self._dataFilesDestination.append(destination)
+        if destination is None: destination = file
+        self._dataFilesDestination.append(os.path.basename(destination))
 
         if location == "relative":
             self._dataFiles.append(file)
