@@ -232,7 +232,7 @@ class DriverBase:
 
     def setFailureMode(self,mode):
         """
-        Set the failure behavior, for "HARD" (default) an exeption is throw if function evaluations fail,
+        Set the failure behavior, for "HARD" (default) an exception is throw if function evaluations fail,
         for "SOFT" the driver catches exceptions and uses default function values (if they have them).
         The "SOFT" mode is useful if the optimizer does not handle exceptions.
         """

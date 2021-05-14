@@ -187,7 +187,7 @@ class ParallelEvalDriver(DriverBase):
         #end
     #end
 
-    # Evaluate all functions (objectives and constraints), imediately
+    # Evaluate all functions (objectives and constraints), immediately
     # retrieves and stores the results after shifting and scaling.
     def _evaluateFunctions(self, x):
         self._handleVariableChange(x)
