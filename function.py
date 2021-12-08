@@ -1,4 +1,4 @@
-#  Copyright 2019-2020, Pedro Gomes.
+#  Copyright 2019-2020, FADO Contributors (cf. AUTHORS.md)
 #
 #  This file is part of FADO.
 #
@@ -20,7 +20,7 @@ import abc
 
 
 class FunctionBase(abc.ABC):
-    """Abstract base class to define the essencial interface of Function objects."""
+    """Abstract base class to define the essential interface of Function objects."""
     def __init__(self,name):
         self._name = name
         # inputs

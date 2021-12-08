@@ -1,4 +1,4 @@
-#  Copyright 2019-2020, Pedro Gomes.
+#  Copyright 2019-2020, FADO Contributors (cf. AUTHORS.md)
 #
 #  This file is part of FADO.
 #
@@ -34,6 +34,7 @@ class ExternalRun:
     """
     def __init__(self,dir,command,useSymLinks=False):
         self._dataFiles = []
+        self._dataFilesDestination = []
         self._confFiles = []
         self._expectedFiles = []
         self._workDir = dir
@@ -54,17 +55,22 @@ class ExternalRun:
             raise ValueError("File '"+file+"' not found.")
         flist.append(file)
 
-    def addData(self,file,location="auto"):
+    def addData(self,file,location="auto",destination=None):
         """
         Adds a "data" file to the run, an immutable dependency of the process.
 
         Parameters
         ----------
-        file     : Path to the file.
-        location : Type of path, "relative" (to the parent of "dir"), "absolute" (the path
-                   is immediately converted to an absolute path, the file must exist),
-                   or "auto" (tries "absolute" first, reverts to "relative"). 
+        file        : Path to the file.
+        location    : Type of path, "relative" (to the parent of "dir"), "absolute" (the path
+                     is immediately converted to an absolute path, the file must exist),
+                     or "auto" (tries "absolute" first, falls back to "relative").
+        destination : Filename to be set at the destination. Discards any additional file path.
+                      The default destination is the regular filename (i.e. "file").
         """
+        if destination is None: destination = file
+        self._dataFilesDestination.append(os.path.basename(destination))
+
         if location == "relative":
             self._dataFiles.append(file)
         else:
@@ -119,8 +125,8 @@ class ExternalRun:
 
         try:
             os.mkdir(self._workDir)
-            for file in self._dataFiles:
-                target = os.path.join(self._workDir,os.path.basename(file))
+            for file, destination in zip(self._dataFiles, self._dataFilesDestination):
+                target = os.path.join(self._workDir,destination)
                 (shutil.copy,os.symlink)[self._symLinks](os.path.abspath(file),target)
 
             for file in self._confFiles:

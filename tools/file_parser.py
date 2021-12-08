@@ -1,4 +1,4 @@
-#  Copyright 2019-2020, Pedro Gomes.
+#  Copyright 2019-2020, FADO Contributors (cf. AUTHORS.md)
 #
 #  This file is part of FADO.
 #
@@ -85,7 +85,7 @@ class PreStringHandler:
     Read or write "delim"-separated values in front of a label (prefix-string),
     which must start the line. Both label and delimiter are passed to __init__.
     When reading the class can only handle the first occurrence of the label,
-    when writing every occurence will be handled.
+    when writing every occurrence will be handled.
 
     Example
     -------

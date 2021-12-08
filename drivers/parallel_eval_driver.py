@@ -1,4 +1,4 @@
-#  Copyright 2019-2020, Pedro Gomes.
+#  Copyright 2019-2020, FADO Contributors (cf. AUTHORS.md)
 #
 #  This file is part of FADO.
 #
@@ -187,7 +187,7 @@ class ParallelEvalDriver(DriverBase):
         #end
     #end
 
-    # Evaluate all functions (objectives and constraints), imediately
+    # Evaluate all functions (objectives and constraints), immediately
     # retrieves and stores the results after shifting and scaling.
     def _evaluateFunctions(self, x):
         self._handleVariableChange(x)
