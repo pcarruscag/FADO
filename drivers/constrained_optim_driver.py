@@ -1,4 +1,4 @@
-#  Copyright 2019-2020, FADO Contributors (cf. AUTHORS.md)
+#  Copyright 2019-2023, FADO Contributors (cf. AUTHORS.md)
 #
 #  This file is part of FADO.
 #
@@ -73,6 +73,7 @@ class ConstrainedOptimizationDriver(ParallelEvalDriver):
         self._ofval = np.zeros((len(self._objectives),))
         self._eqval = np.zeros((len(self._constraintsEQ),))
         self._gtval = np.zeros((len(self._constraintsGT),))
+        self._monval = np.zeros((len(self._monitors),))
 
         # write the header for the history file
         if self._hisObj is not None:
@@ -82,6 +83,8 @@ class ConstrainedOptimizationDriver(ParallelEvalDriver):
             for obj in self._constraintsEQ:
                 header += obj.function.getName()+self._hisDelim
             for obj in self._constraintsGT:
+                header += obj.function.getName()+self._hisDelim
+            for obj in self._monitors:
                 header += obj.function.getName()+self._hisDelim
             header = header.strip(self._hisDelim)+"\n"
             self._hisObj.write(header)

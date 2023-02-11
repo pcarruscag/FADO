@@ -1,4 +1,4 @@
-#  Copyright 2019-2020, FADO Contributors (cf. AUTHORS.md)
+#  Copyright 2019-2023, FADO Contributors (cf. AUTHORS.md)
 #
 #  This file is part of FADO.
 #
@@ -187,7 +187,7 @@ class TableReader:
                 line = line.replace(char," ")
 
             tmp = line.strip().split()[self._start[1]:self._end[1]]
-            
+
             if numCol == 0:
                 numCol = len(tmp)
                 data = np.ndarray((numRow,numCol))

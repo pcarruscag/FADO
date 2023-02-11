@@ -1,4 +1,4 @@
-#  Copyright 2019-2020, FADO Contributors (cf. AUTHORS.md)
+#  Copyright 2019-2023, FADO Contributors (cf. AUTHORS.md)
 #
 #  This file is part of FADO.
 #
@@ -72,6 +72,7 @@ class ParallelEvalDriver(DriverBase):
         _addEvals(self._objectives   ,valEvals,jacEvals)
         _addEvals(self._constraintsEQ,valEvals,jacEvals)
         _addEvals(self._constraintsGT,valEvals,jacEvals)
+        _addEvals(self._monitors     ,valEvals,jacEvals)
 
         # for each unique evaluation list its direct dependencies
         self._funEvalGraph = dict(zip(valEvals,[set() for i in range(len(valEvals))]))
@@ -91,6 +92,7 @@ class ParallelEvalDriver(DriverBase):
         _addDependencies(self._objectives   ,self._funEvalGraph,self._jacEvalGraph)
         _addDependencies(self._constraintsEQ,self._funEvalGraph,self._jacEvalGraph)
         _addDependencies(self._constraintsGT,self._funEvalGraph,self._jacEvalGraph)
+        _addDependencies(self._monitors     ,self._funEvalGraph,self._jacEvalGraph)
     #end
 
     # run the active evaluations of a dependency graph
@@ -171,6 +173,8 @@ class ParallelEvalDriver(DriverBase):
                 for evl in obj.function.getGradientEvalChain():
                     active[evl] = True
 
+        # gradients are not needed for monitor functions
+
         self._evalInParallel(self._jacEvalGraph, active)
 
         self._jacTime += time.time()
@@ -225,6 +229,7 @@ class ParallelEvalDriver(DriverBase):
         fetchValues(self._ofval, self._objectives)
         fetchValues(self._eqval, self._constraintsEQ)
         fetchValues(self._gtval, self._constraintsGT)
+        fetchValues(self._monval, self._monitors)
 
         self._funTime += time.time()
 
@@ -253,7 +258,7 @@ class ParallelEvalDriver(DriverBase):
     # when the results are read in "function.getGradient".
     def _evaluateGradients(self, x):
         # we assume that evaluating the gradients requires the functions
-        self._evaluateFunctions(x)        
+        self._evaluateFunctions(x)
 
         # lazy evaluation
         if self._jacReady: return False
