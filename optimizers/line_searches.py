@@ -1,4 +1,4 @@
-#  Copyright 2019-2020, FADO Contributors (cf. AUTHORS.md)
+#  Copyright 2019-2023, FADO Contributors (cf. AUTHORS.md)
 #
 #  This file is part of FADO.
 #
@@ -43,7 +43,7 @@ def goldenSection(fun,maxiter,f0=None,lbd0=1,tol=1e-3):
     x = [0.0, L2, x[2]-L2, x[2]]
     y = [fun(x[1]), fun(x[2])]
     feval += 2
-    
+
     # iterate
     while feval < maxiter:
         if y[0] < y[1]: # keep left interval
@@ -120,7 +120,7 @@ def quadraticInterp(fun,maxiter,f0=None,lbd0=1,tol=1e-3):
 
     # iterate
     y_ref = max(max(y),-min(y),tol)
-    
+
     while True:
         # compute x_opt'
         det = (x[0]-x[1])*(x[1]-x[2])*(x[2]-x[0])

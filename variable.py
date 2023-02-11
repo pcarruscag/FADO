@@ -1,4 +1,4 @@
-#  Copyright 2019-2020, FADO Contributors (cf. AUTHORS.md)
+#  Copyright 2019-2023, FADO Contributors (cf. AUTHORS.md)
 #
 #  This file is part of FADO.
 #
@@ -20,7 +20,7 @@ import numpy as np
 
 
 class InputVariable:
-    """    
+    """
     Class to define design variables.
 
     Parameters
