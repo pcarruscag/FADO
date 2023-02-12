@@ -100,12 +100,14 @@ class PreStringHandler:
         with open(file) as f:
             lines = f.readlines()
 
+        data = []
         for line in lines:
             if line.startswith(self._label):
                 data = line.lstrip(self._label).strip().split(self._delim)
                 break
             #end
-        #end
+        if not data:
+            raise RuntimeError(self._label + " not found.")
 
         size = len(data)
         if size==1: return float(data[0])

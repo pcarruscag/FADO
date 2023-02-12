@@ -187,6 +187,7 @@ class Function(FunctionBase):
         for var,file,parser in zip(self._variables,self._gradFiles,self._gradParse):
             grad = parser.read(file)
             if var.getSize() == 1:
+                # Convert the value to a scalar if it is not yet.
                 try: grad = sum(grad)
                 except: pass
             #end

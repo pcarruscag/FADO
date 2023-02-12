@@ -27,10 +27,6 @@ class ScipyDriver(ConstrainedOptimizationDriver):
     """
     def __init__(self):
         ConstrainedOptimizationDriver.__init__(self)
-
-        # list of constraints and variable bounds
-        self._constraints = []
-        self._bounds = []
     #end
 
     def preprocess(self):

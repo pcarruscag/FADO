@@ -57,8 +57,6 @@ class ExteriorPenaltyDriver(ParallelEvalDriver):
         self._old_grad = None
 
         # timers, counters, flags
-        self._funEval = 0
-        self._jacEval = 0
         self._isInit = False
         self._isFeasible = False
         self._logRowFormat = ""
