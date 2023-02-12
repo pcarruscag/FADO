@@ -1,8 +1,6 @@
 # FADO
 Framework for Aerostructural Design Optimization
 
-[![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/pcarruscag/FADO.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/pcarruscag/FADO/context:python)
-
 ## Motivation
 Q: "What is my purpose?"
 
