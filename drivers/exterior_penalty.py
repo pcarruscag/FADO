@@ -1,4 +1,4 @@
-#  Copyright 2019-2020, FADO Contributors (cf. AUTHORS.md)
+#  Copyright 2019-2023, FADO Contributors (cf. AUTHORS.md)
 #
 #  This file is part of FADO.
 #
@@ -39,7 +39,7 @@ class ExteriorPenaltyDriver(ParallelEvalDriver):
     """
     def __init__(self, tol, freq=40, rini=8, rmax=1024, factorUp=4, factorDown=0.5):
         ParallelEvalDriver.__init__(self, True)
-        
+
         # parameters of the method
         self._tol = tol
         self._freq = freq
@@ -57,8 +57,6 @@ class ExteriorPenaltyDriver(ParallelEvalDriver):
         self._old_grad = None
 
         # timers, counters, flags
-        self._funEval = 0
-        self._jacEval = 0
         self._isInit = False
         self._isFeasible = False
         self._logRowFormat = ""
@@ -79,6 +77,7 @@ class ExteriorPenaltyDriver(ParallelEvalDriver):
         self._ofval = np.zeros((len(self._objectives),))
         self._eqval = np.zeros((len(self._constraintsEQ),))
         self._gtval = np.zeros((len(self._constraintsGT),))
+        self._monval = np.zeros((len(self._monitors),))
 
         self._eqpen = np.ones((len(self._constraintsEQ),))*self._rini
         self._gtpen = np.ones((len(self._constraintsGT),))*self._rini
@@ -102,6 +101,9 @@ class ExteriorPenaltyDriver(ParallelEvalDriver):
                 headerData.append(obj.function.getName(w-1))
                 headerData.append("PEN COEFF")
                 self._logRowFormat += "{:>W.Pg}"*2
+            for obj in self._monitors:
+                headerData.append(obj.function.getName(w-1))
+                self._logRowFormat += "{:>W.Pg}"
             # right-align, set width in format and a precision that fits it
             self._logRowFormat = self._logRowFormat.replace("W",str(w))+"\n"
             self._logRowFormat = self._logRowFormat.replace("P",str(min(8,w-7)))
@@ -119,6 +121,8 @@ class ExteriorPenaltyDriver(ParallelEvalDriver):
             for obj in self._constraintsEQ:
                 header += obj.function.getName()+self._hisDelim
             for obj in self._constraintsGT:
+                header += obj.function.getName()+self._hisDelim
+            for obj in self._monitors:
                 header += obj.function.getName()+self._hisDelim
             header = header.strip(self._hisDelim)+"\n"
             self._hisObj.write(header)
@@ -139,8 +143,10 @@ class ExteriorPenaltyDriver(ParallelEvalDriver):
         for (g,r) in zip(self._gtval,self._gtpen):
             data.append(g)
             data.append(r)
+        for f in self._monval:
+            data.append(f)
         self._logObj.write(self._logRowFormat.format(*data))
-    #end        
+    #end
 
     def fun(self,x):
         """Evaluate the penalized function at "x"."""
@@ -199,7 +205,7 @@ class ExteriorPenaltyDriver(ParallelEvalDriver):
 
         # update penalties and params (evaluating the gradient concludes an outer iteration)
         if self._freq > 0:
-            if self._jacEval % self._freq is 0: self.update()
+            if self._jacEval % self._freq == 0: self.update()
 
         # make copy to use as fallback
         self._old_grad[()] = self._grad

@@ -1,4 +1,4 @@
-#  Copyright 2019-2020, FADO Contributors (cf. AUTHORS.md)
+#  Copyright 2019-2023, FADO Contributors (cf. AUTHORS.md)
 #
 #  This file is part of FADO.
 #
@@ -100,12 +100,14 @@ class PreStringHandler:
         with open(file) as f:
             lines = f.readlines()
 
+        data = []
         for line in lines:
             if line.startswith(self._label):
                 data = line.lstrip(self._label).strip().split(self._delim)
                 break
             #end
-        #end
+        if not data:
+            raise RuntimeError(self._label + " not found.")
 
         size = len(data)
         if size==1: return float(data[0])
@@ -187,7 +189,7 @@ class TableReader:
                 line = line.replace(char," ")
 
             tmp = line.strip().split()[self._start[1]:self._end[1]]
-            
+
             if numCol == 0:
                 numCol = len(tmp)
                 data = np.ndarray((numRow,numCol))

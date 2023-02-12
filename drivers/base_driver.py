@@ -1,4 +1,4 @@
-#  Copyright 2019-2020, FADO Contributors (cf. AUTHORS.md)
+#  Copyright 2019-2023, FADO Contributors (cf. AUTHORS.md)
 #
 #  This file is part of FADO.
 #
@@ -46,6 +46,11 @@ class DriverBase:
             self.function = function
     #end
 
+    class _Monitor:
+        def __init__(self,function):
+            self.function = function
+    #end
+
     def __init__(self):
         self._variables = []
         self._varScales = None
@@ -61,11 +66,13 @@ class DriverBase:
         self._objectives = []
         self._constraintsEQ = []
         self._constraintsGT = []
+        self._monitors = []
 
         # function values
         self._ofval = None
         self._eqval = None
         self._gtval = None
+        self._monval = None
 
         # map the start index of each variable in the design vector
         self._variableStartMask = None
@@ -122,6 +129,10 @@ class DriverBase:
         scale = 1.0/(upper-lower)
         self._constraintsGT.append(self._Constraint(function,scale,lower))
         self._constraintsGT.append(self._Constraint(function,-1*scale,upper))
+
+    def addMonitor(self,function):
+        """Add a function to monitor its value, does not participate in the optimization."""
+        self._monitors.append(self._Monitor(function))
 
     def setWorkingDirectory(self,dir):
         """Set the name of the working directory where each iteration runs, it should not exist."""
@@ -201,6 +212,7 @@ class DriverBase:
         self._getVarsAndParsFromFun(self._objectives)
         self._getVarsAndParsFromFun(self._constraintsEQ)
         self._getVarsAndParsFromFun(self._constraintsGT)
+        self._getVarsAndParsFromFun(self._monitors)
 
         # map the start index of each variable in the design vector
         idx = [0]
@@ -262,6 +274,8 @@ class DriverBase:
             obj.function.resetValueEvalChain()
         for obj in self._constraintsGT:
             obj.function.resetValueEvalChain()
+        for obj in self._monitors:
+            obj.function.resetValueEvalChain()
     #end
 
     def _resetAllGradientEvaluations(self):
@@ -270,6 +284,8 @@ class DriverBase:
         for obj in self._constraintsEQ:
             obj.function.resetGradientEvalChain()
         for obj in self._constraintsGT:
+            obj.function.resetGradientEvalChain()
+        for obj in self._monitors:
             obj.function.resetGradientEvalChain()
     #end
 
@@ -282,6 +298,8 @@ class DriverBase:
         for val in self._eqval:
             hisLine += str(val)+self._hisDelim
         for val in self._gtval:
+            hisLine += str(val)+self._hisDelim
+        for val in self._monval:
             hisLine += str(val)+self._hisDelim
         hisLine = hisLine.strip(self._hisDelim)+"\n"
         self._hisObj.write(hisLine)

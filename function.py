@@ -1,4 +1,4 @@
-#  Copyright 2019-2020, FADO Contributors (cf. AUTHORS.md)
+#  Copyright 2019-2023, FADO Contributors (cf. AUTHORS.md)
 #
 #  This file is part of FADO.
 #
@@ -187,6 +187,7 @@ class Function(FunctionBase):
         for var,file,parser in zip(self._variables,self._gradFiles,self._gradParse):
             grad = parser.read(file)
             if var.getSize() == 1:
+                # Convert the value to a scalar if it is not yet.
                 try: grad = sum(grad)
                 except: pass
             #end
@@ -200,7 +201,7 @@ class Function(FunctionBase):
                 idx += 1
             #end
         #end
-        
+
         return gradient
     #end
 
@@ -211,7 +212,7 @@ class Function(FunctionBase):
         #end
     #end
 
-    def resetValueEvalChain(self): 
+    def resetValueEvalChain(self):
         self._resetEvals(self._funEval)
 
     def resetGradientEvalChain(self):

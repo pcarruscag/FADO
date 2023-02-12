@@ -1,4 +1,4 @@
-#  Copyright 2019-2020, FADO Contributors (cf. AUTHORS.md)
+#  Copyright 2019-2023, FADO Contributors (cf. AUTHORS.md)
 #
 #  This file is part of FADO.
 #
@@ -27,10 +27,6 @@ class ScipyDriver(ConstrainedOptimizationDriver):
     """
     def __init__(self):
         ConstrainedOptimizationDriver.__init__(self)
-
-        # list of constraints and variable bounds
-        self._constraints = []
-        self._bounds = []
     #end
 
     def preprocess(self):
@@ -86,7 +82,7 @@ class ScipyDriver(ConstrainedOptimizationDriver):
     def grad(self, x):
         """Method passed to SciPy to get the objective function gradient."""
         # Evaluates gradients and functions if necessary, otherwise it
-        # simply combines and scales the results.    
+        # simply combines and scales the results.
         self._jacTime -= time.time()
         try:
             self._evaluateGradients(x)
