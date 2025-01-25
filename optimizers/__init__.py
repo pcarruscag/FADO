@@ -1,2 +1,2 @@
-from optimizers.fletcher_reeves import *
-from optimizers.line_searches import *
+from .fletcher_reeves import *
+from .line_searches import *

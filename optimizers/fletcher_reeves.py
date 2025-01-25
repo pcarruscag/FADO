@@ -1,4 +1,4 @@
-#  Copyright 2019-2023, FADO Contributors (cf. AUTHORS.md)
+#  Copyright 2019-2025, FADO Contributors (cf. AUTHORS.md)
 #
 #  This file is part of FADO.
 #
@@ -15,7 +15,7 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with FADO.  If not, see <https://www.gnu.org/licenses/>.
 
-from optimizers.line_searches import goldenSection
+from .line_searches import goldenSection
 import numpy as np
 
 

@@ -1,4 +1,4 @@
-#  Copyright 2019-2023, FADO Contributors (cf. AUTHORS.md)
+#  Copyright 2019-2025, FADO Contributors (cf. AUTHORS.md)
 #
 #  This file is part of FADO.
 #
@@ -19,7 +19,7 @@ import os
 import time
 import copy
 import numpy as np
-from drivers.parallel_eval_driver import ParallelEvalDriver
+from .parallel_eval_driver import ParallelEvalDriver
 
 
 class ExteriorPenaltyDriver(ParallelEvalDriver):

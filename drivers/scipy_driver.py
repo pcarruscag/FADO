@@ -1,4 +1,4 @@
-#  Copyright 2019-2023, FADO Contributors (cf. AUTHORS.md)
+#  Copyright 2019-2025, FADO Contributors (cf. AUTHORS.md)
 #
 #  This file is part of FADO.
 #
@@ -18,7 +18,7 @@
 import os
 import time
 import numpy as np
-from drivers.constrained_optim_driver import ConstrainedOptimizationDriver
+from .constrained_optim_driver import ConstrainedOptimizationDriver
 
 
 class ScipyDriver(ConstrainedOptimizationDriver):
