@@ -24,31 +24,31 @@ parFunc2 = Parameter(["constraint"],LabelReplacer("__FUNCTION__"))
 
 # Evaluations
 # "runs" that are needed to compute functions and their gradients
-evalFun1 = ExternalRun("RUN1","python ../../direct.py config_tmpl.txt")
+evalFun1 = ExternalRun("RUN1","python3 ../../direct.py config_tmpl.txt")
 evalFun1.addConfig("config_tmpl.txt")
 evalFun1.addData("data1.txt")
 evalFun1.addParameter(parData1)
 
-evalJac1 = ExternalRun("JAC1","python ../../adjoint.py config_tmpl.txt")
+evalJac1 = ExternalRun("JAC1","python3 ../../adjoint.py config_tmpl.txt")
 evalJac1.addConfig("config_tmpl.txt")
 evalJac1.addData("data1.txt")
 evalJac1.addData("RUN1/results.txt") # simulate we need data from the direct run
 evalJac1.addParameter(parData1)
 evalJac1.addParameter(parFunc1)
 
-evalFun2 = ExternalRun("RUN2","python ../../direct.py config_tmpl.txt")
+evalFun2 = ExternalRun("RUN2","python3 ../../direct.py config_tmpl.txt")
 evalFun2.addConfig("config_tmpl.txt")
 evalFun2.addData("data2.txt")
 evalFun2.addParameter(parData2)
 
-evalJac2 = ExternalRun("JAC2","python ../../adjoint.py config_tmpl.txt")
+evalJac2 = ExternalRun("JAC2","python3 ../../adjoint.py config_tmpl.txt")
 evalJac2.addConfig("config_tmpl.txt")
 evalJac2.addData("data2.txt")
 evalJac2.addData("RUN2/results.txt") # simulate we need data from the direct run
 evalJac2.addParameter(parData2)
 evalJac2.addParameter(parFunc1)
 
-evalJac3 = ExternalRun("JAC3","python ../../adjoint.py config_tmpl.txt")
+evalJac3 = ExternalRun("JAC3","python3 ../../adjoint.py config_tmpl.txt")
 evalJac3.addConfig("config_tmpl.txt")
 evalJac3.addData("data2.txt")
 evalJac3.addData("RUN2/results.txt") # simulate we need data from the direct run
